@@ -73,13 +73,23 @@ export default function RegisterPage() {
       <main className="register-main shell">
         <section className="register-intro">
           <div className="register-preview">
-            <div className="register-preview-head">D2P 2026 <b>PLAYER CARD</b></div>
-            <div className="register-preview-photo">{photoPreview ? <img alt="Your photo" src={photoPreview} /> : <i>{initials}</i>}</div>
-            <strong className="register-preview-name">{form.name.trim() || 'YOUR NAME'}</strong>
-            <em>{form.player_type}</em>
-            <div className="register-preview-divider" />
-            <span>PLAYER #{playerNo}</span>
-            <small>TEAM · TO BE AUCTIONED</small>
+            <div className="rp-header">
+              <span className="rp-league">D2P <b>2026</b></span>
+              <span className="rp-cat">PLAYER CARD</span>
+            </div>
+            <div className="rp-photo">
+              {photoPreview ? <img alt="Your photo" src={photoPreview} /> : <span className="rp-photo-fallback"><i>{initials}</i></span>}
+              <span className="rp-photo-grad" />
+              <span className="rp-role">{form.player_type}</span>
+            </div>
+            <div className="rp-body">
+              <strong className="rp-name">{form.name.trim() || 'YOUR NAME'}</strong>
+              <div className="rp-tags">
+                <span>#{playerNo}</span>
+                <span>JERSEY {form.jersey_size}</span>
+              </div>
+            </div>
+            <div className="rp-footer">TEAM · TO BE AUCTIONED</div>
           </div>
         </section>
         <form className="registration-form registration-card" onSubmit={submit}>
