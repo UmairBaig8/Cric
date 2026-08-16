@@ -1,10 +1,8 @@
 import { FormEvent, useState } from 'react';
-import { hasSupabaseConfig } from './env';
 import { registerPlayer } from './lib/registrations';
 import { sendConfirmationEmail } from './lib/email';
 import { useTheme } from './lib/useTheme';
 import SiteHeader from './components/SiteHeader';
-import FireFX from './components/FireFX';
 import type { RegistrationInput } from './types';
 
 const initialForm: RegistrationInput = {
@@ -74,16 +72,6 @@ export default function RegisterPage() {
       <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
       <main className="register-main shell">
         <section className="register-intro">
-          <FireFX className="register-fire" />
-          <div className="kicker"><i /> REGISTRATION LIVE</div>
-          <h1>YOUR DESK.<br /><span>YOUR GAME.</span><br /><span>YOUR TEAM.</span></h1>
-          <p>Your office persona ends here.<br />Your player persona starts now.</p>
-          <div className="register-stats">
-            <div><b>06</b><span>TEAMS</span></div>
-            <div><b>48</b><span>PLAYERS</span></div>
-            <div><b>12</b><span>MATCHES</span></div>
-          </div>
-          <div className="register-status"><i /> {hasSupabaseConfig ? 'REGISTRATION OPEN' : 'DEMO MODE — DATABASE NOT CONNECTED'}</div>
           <div className="register-preview">
             <div className="register-preview-head">D2P 2026 <b>PLAYER CARD</b></div>
             <div className="register-preview-photo">{photoPreview ? <img alt="Your photo" src={photoPreview} /> : <i>{initials}</i>}</div>
