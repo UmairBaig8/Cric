@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { hasSupabaseConfig } from './env';
-import { fetchRecentPlayers, fetchRegistrationsCount, fetchSiteSettings, fetchTeams } from './lib/site';
-import type { RecentPlayer } from './lib/site';
+import { fetchRecentPlayers, fetchRegistrationsCount, fetchSiteSettings, fetchTeams, fetchPlayerCards } from './lib/site';
+import type { RecentPlayer, PlayerCard } from './lib/site';
 import { useTheme } from './lib/useTheme';
 import FlameWrap from './components/canvasui/FlameWrap';
 import SiteHeader from './components/SiteHeader';
@@ -37,10 +37,11 @@ export default function App() {
   const [championLabel, setChampionLabel] = useState('1');
   const [teams, setTeams] = useState<string[]>(FALLBACK_TEAMS);
   const [recentPlayers, setRecentPlayers] = useState<RecentPlayer[]>([]);
+  const [playerCards, setPlayerCards] = useState<PlayerCard[]>([]);
 
   useEffect(() => {
     let mounted = true;
-    Promise.all([fetchSiteSettings(), fetchTeams(), fetchRegistrationsCount(), fetchRecentPlayers(5)]).then(([settings, teamRows, count, players]) => {
+    Promise.all([fetchSiteSettings(), fetchTeams(), fetchRegistrationsCount(), fetchRecentPlayers(5), fetchPlayerCards(8)]).then(([settings, teamRows, count, players, cards]) => {
       if (!mounted) return;
       if (settings) {
         if (settings.registration_deadline) setDeadlineAt(new Date(settings.registration_deadline).getTime());
@@ -52,6 +53,7 @@ export default function App() {
       if (teamRows.length) setTeams(teamRows.map((team) => `${team.name} ${team.icon}`.trim()));
       if (typeof count === 'number') setPlayerCount(count);
       if (players.length) setRecentPlayers(players);
+      if (cards.length) setPlayerCards(cards);
     });
     return () => { mounted = false; };
   }, []);
@@ -81,17 +83,22 @@ export default function App() {
         <section className="hero" id="tournament">
           <div className="hero-art" aria-hidden="true" />
           <div className="shell hero-content">
-            <div className="kicker"><i /> REGISTRATION LIVE</div>
+            <div className="kicker"><i /> D2P 2026 · REGISTRATION LIVE</div>
             <div className="social-proof"><div className="avatars">{(recentPlayers.length ? recentPlayers : []).map((player) => player.photo_url ? <img alt={player.name} className="avatar" key={player.id} src={player.photo_url} /> : <i className="avatar" key={player.id} />)}{!recentPlayers.length ? [1, 2, 3, 4, 5].map((avatar) => <i className="avatar" key={avatar} />) : null}</div><strong>{playerCount}+</strong> players already joined</div>
-            <h1>FROM DESKS<br /><span>TO GLORY.</span></h1>
+            <h1>DESK TO<br /><span>PITCH.</span></h1>
+            <div className="hero-sub">DIGITATE PREMIER LEAGUE · THE OFFICE CRICKET LEAGUE</div>
             <div className="hero-copy">Same office. Different game.<br />This time, let&apos;s <strong>play for keeps.</strong></div>
-            <div className="actions"><a className="btn btn-primary" href="/D2P/register">🏏 I&apos;M IN. REGISTER NOW →</a><a className="btn btn-secondary" href="#how">▶ WATCH HOW IT WORKS</a></div>
-            <div className="hero-stats"><div className="stat"><b>{totalTeams}</b><small>TEAMS</small></div><div className="stat"><b>{capacity}</b><small>PLAYERS</small></div><div className="stat"><b>{totalMatches}</b><small>MATCHES</small></div><div className="stat"><b>{championLabel}</b><small>CHAMPION</small></div></div>
+            <div className="actions"><a className="btn btn-primary" href="/D2P/register">🏏 JOIN D2P 2026 →</a><a className="btn btn-secondary" href="#teams">VIEW TOURNAMENT</a></div>
+            <div className="hero-stats"><div className="stat"><b>{totalTeams}</b><small>TEAMS</small></div><div className="stat"><b>{playerCount}</b><small>PLAYERS</small></div><div className="stat"><b>{totalMatches}</b><small>MATCHES</small></div><div className="stat"><b>{championLabel}</b><small>CHAMPION</small></div></div>
           </div>
           <FlameWrap className="hero-flame" height={170} radius={20} melt={14} scorch={1.5} ember={2.5} distortion={14} smoke={1.5} rim={3} intensity={0.6}><aside className="hero-panel"><div className="panel-label">DPL 2026 / REGISTRATION WINDOW</div><div className="panel-title">Your spot is waiting.</div><div className="countdown"><div className="time"><b>{time(days)}</b><span>DAYS</span></div><div className="time"><b>{time(hours)}</b><span>HRS</span></div><div className="time"><b>{time(mins)}</b><span>MINS</span></div><div className="time"><b>{time(secs)}</b><span>SECS</span></div></div><div className="capacity"><div className="capacity-head"><span>PLAYER CAPACITY</span><strong><span>{playerCount}</span> / {capacity}</strong></div><div className="meter"><i style={{ width: `${meterWidth}%` }} /></div><div className="spots">Only <strong>{spotsLeft} spots</strong> left. Don&apos;t sit this one out.</div></div><a className="btn btn-primary panel-cta" href="#register">YES, COUNT ME IN →</a></aside></FlameWrap>
         </section>
 
         <section className="ribbon"><div className="shell ribbon-grid">{[['🪑', 'BREAK THE ROUTINE', 'Step out of the chair. Into the game.'], ['🤝', 'TEAM UP', 'Bond beyond projects. Build real teamwork.'], ['🎯', 'COMPETE', 'Challenge rivals. Bring your A-game.'], ['🏆', 'WIN GLORY', 'Lift the trophy. Earn the bragging rights.']].map(([icon, title, copy]) => <div className="ribbon-item" key={title}><div className="ribbon-icon">{icon}</div><div><b>{title}</b><p>{copy}</p></div></div>)}</div></section>
+
+        <section className="desk-pitch" id="journey"><div className="shell"><div className="section-head"><div className="eyebrow cyan">THE D2P JOURNEY</div><h2>FROM DESK.<br /><span>TO PITCH.</span></h2><p>Same colleagues. Different battlefield. The transformation that makes D2P what it is.</p></div><div className="dp-track"><article className="dp-card desk"><div className="dp-icon">💻</div><div className="dp-time">9:00 AM</div><h3>THE DESK</h3><p>Emails · Meetings · Code · Deadlines</p></article><div className="dp-arrow" aria-hidden="true">→</div><article className="dp-card pitch"><div className="dp-icon">🏏</div><div className="dp-time">7:00 PM</div><h3>THE PITCH</h3><p>Teams · Sixes · Rivalries · Glory</p></article></div><p className="dp-tagline">Same colleagues. <span>Different battlefield.</span></p></div></section>
+
+        <section className="squad" id="players"><div className="shell"><div className="section-head"><div className="eyebrow">ALREADY IN</div><h2>MEET THE SQUAD.</h2><p>These players have locked in their spot. Your player card could be next.</p></div>{playerCards.length ? <div className="player-grid">{playerCards.map((player) => <article className="player-card" key={player.id}><div className="player-photo">{player.photo_url ? <img alt={player.name} src={player.photo_url} /> : <span>{player.name.split(' ').map((word) => word[0]).slice(0, 2).join('')}</span>}</div><h3>{player.name}</h3><span className="player-role">{player.player_type}</span><span className="player-squad">{player.squad}</span></article>)}</div> : <div className="player-grid">{[1, 2, 3, 4, 5, 6, 7, 8].map((slot) => <article className="player-card placeholder" key={slot}><div className="player-photo"><span>?</span></div><h3>YOUR NAME</h3><span className="player-role">YOUR ROLE</span><span className="player-squad">YOUR SQUAD</span></article>)}</div>}<div className="squad-cta"><a className="btn btn-primary" href="/D2P/register">🏏 ADD YOUR CARD →</a></div></div></section>
 
         <section className="section" id="how"><div className="shell"><div className="section-head"><div className="eyebrow">FROM SIGN-UP TO TROPHY</div><h2>HOW DPL WORKS</h2><p>One simple journey from your desk to match day. Your player profile follows you all the way to the final.</p></div><div className="steps">{steps.map(([icon, title, copy]) => <article className="step" key={title}><div className="step-dot">{icon}</div><h3>{title}</h3><p>{copy}</p></article>)}</div></div></section>
 

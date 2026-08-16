@@ -26,3 +26,19 @@ export async function fetchRecentPlayers(limitCount = 5): Promise<RecentPlayer[]
   const { data, error } = await supabase.rpc('recent_registrations', { limit_count: limitCount });
   return error ? [] : (data as RecentPlayer[]);
 }
+
+export type PlayerCard = {
+  id: string;
+  name: string;
+  photo_url: string | null;
+  player_type: string;
+  squad: string;
+  jersey_size: string;
+  created_at: string;
+};
+
+export async function fetchPlayerCards(limitCount = 8): Promise<PlayerCard[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('player_cards', { limit_count: limitCount });
+  return error ? [] : (data as PlayerCard[]);
+}
