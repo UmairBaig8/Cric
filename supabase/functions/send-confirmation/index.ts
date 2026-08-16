@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
             <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:#087f91;margin-bottom:10px;">WHAT HAPPENS NEXT</div>
             <div style="font-size:13px;color:#334556;line-height:2;">\u2713 Your player card enters the DPL universe<br/>\u2713 Auction day \u2014 find out who bids for you<br/>\u2713 Match day \u2014 wear your colours, make memories</div>
           </div>
-          <a href="https://umairbaig8.github.io/Cric/" style="display:inline-block;background:#2867ff;color:#fff;text-decoration:none;font-size:12px;font-weight:800;padding:13px 22px;border-radius:10px;">VISIT DPL 2026</a>
+          <a href="https://umairbaig8.github.io/D2P/" style="display:inline-block;background:#2867ff;color:#fff;text-decoration:none;font-size:12px;font-weight:800;padding:13px 22px;border-radius:10px;">VISIT DPL 2026</a>
           <p style="color:#9aa8b4;font-size:11px;margin-top:26px;">Questions? Reach out to the DPL comms team.</p>
         </div>
       </div>
