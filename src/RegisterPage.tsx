@@ -6,7 +6,7 @@ import SiteHeader from './components/SiteHeader';
 import type { RegistrationInput } from './types';
 
 const initialForm: RegistrationInput = {
-  name: '', email: '', employee_id: '', squad: '', player_type: 'Batter', batting_style: 'Right-hand batter',
+  name: '', email: '', employee_id: '', squad: '', gender: 'Male', player_type: 'Batter', batting_style: 'Right-hand batter',
   bowling_style: 'Do not bowl', bowling_arm: 'Not applicable', cricket_experience: 'Casual player',
   jersey_size: 'M', availability: 'Available for all matches',
 };
@@ -109,6 +109,11 @@ export default function RegisterPage() {
             <fieldset>
               <legend>ABOUT YOU</legend>
               <label>Full name<input autoComplete="name" required minLength={2} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
+              <div className="gender-picker" role="group" aria-label="Gender">
+                {(['Male', 'Female'] as const).map((option) => (
+                  <button type="button" className={form.gender === option ? 'on' : ''} key={option} onClick={() => setForm({ ...form, gender: option })}>{option}</button>
+                ))}
+              </div>
               <label>Work email<input autoComplete="email" required type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
               <label>Employee ID<small>Your unique Digitate employee ID (7–8 digit number)</small><input autoComplete="off" required inputMode="numeric" pattern="[0-9]{7,8}" title="Enter your 7–8 digit employee ID" maxLength={8} placeholder="e.g. 12345678" value={form.employee_id} onChange={(event) => setForm({ ...form, employee_id: event.target.value.replace(/[^0-9]/g, '') })} /></label>
               <label>Squad<small>Your functional group within the project</small><input autoComplete="organization" required minLength={2} placeholder="e.g. Engineering, Design, Sales" value={form.squad} onChange={(event) => setForm({ ...form, squad: event.target.value })} /></label>

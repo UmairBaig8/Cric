@@ -42,3 +42,25 @@ export async function fetchPlayerCards(limitCount = 8): Promise<PlayerCard[]> {
   const { data, error } = await supabase.rpc('player_cards', { limit_count: limitCount });
   return error ? [] : (data as PlayerCard[]);
 }
+
+export type AuctionPlayer = {
+  id: string;
+  name: string;
+  employee_id: string;
+  photo_url: string | null;
+  player_type: string;
+  squad: string;
+  gender: string;
+  jersey_size: string;
+  cricket_experience: string;
+  availability: string;
+  batting_style: string;
+  bowling_style: string;
+  created_at: string;
+};
+
+export async function fetchAuctionPlayers(): Promise<AuctionPlayer[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('auction_players');
+  return error ? [] : (data as AuctionPlayer[]);
+}

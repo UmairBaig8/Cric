@@ -4,6 +4,7 @@ export type Registration = {
   email: string;
   employee_id: string;
   squad: string;
+  gender: Gender;
   player_type: PlayerType;
   batting_style: BattingStyle;
   bowling_style: BowlingStyle;
@@ -16,6 +17,7 @@ export type Registration = {
 };
 
 export type PlayerType = 'Batter' | 'Bowler' | 'All-rounder' | 'Wicketkeeper-batter';
+export type Gender = 'Male' | 'Female';
 export type BattingStyle = 'Right-hand batter' | 'Left-hand batter';
 export type BowlingStyle = 'Right-arm pace' | 'Left-arm pace' | 'Right-arm spin' | 'Left-arm spin' | 'Do not bowl';
 export type BowlingArm = 'Right arm' | 'Left arm' | 'Not applicable';
