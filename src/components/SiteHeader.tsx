@@ -21,7 +21,7 @@ export default function SiteHeader({ dark, onToggleTheme, relative }: SiteHeader
   const [open, setOpen] = useState(false);
 
   return (
-    <header className={relative ? 'topbar shell register-topbar' : 'topbar shell'}>
+    <header className={relative ? 'topbar register-topbar' : 'topbar'}>
       <a className="brand" href="/D2P/" aria-label="D2P home"><img className="brand-mark" src="/D2P/logo-96.png" alt="D2P logo" width="48" height="48" /><span className="brand-text">DPL <b>2026</b><small>DIGITATE PREMIER LEAGUE</small></span></a>
       <button className="nav-toggle" type="button" aria-label="Menu" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? '✕' : '☰'}</button>
       <nav className={open ? 'nav open' : 'nav'}>
