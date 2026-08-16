@@ -2,7 +2,8 @@ export type Registration = {
   id: string;
   name: string;
   email: string;
-  department: string;
+  employee_id: string;
+  squad: string;
   player_type: PlayerType;
   batting_style: BattingStyle;
   bowling_style: BowlingStyle;
