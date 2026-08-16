@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
 import { hasSupabaseConfig } from './env';
+import { fetchRecentPlayers, fetchRegistrationsCount, fetchSiteSettings, fetchTeams } from './lib/site';
+import type { RecentPlayer } from './lib/site';
+import { useTheme } from './lib/useTheme';
+import FlameWrap from './components/canvasui/FlameWrap';
+import SiteHeader from './components/SiteHeader';
 
 const steps = [
   ['✎', 'REGISTER', 'Sign up and create your player profile.'],
@@ -16,20 +21,52 @@ const benefits = [
   ['05', 'THE MEMORIES.', "Because six months from now, nobody remembers the Tuesday status call. They'll remember that six.", 'gallery'],
 ];
 
+const FALLBACK_TEAMS = ['THUNDER ⚡', 'TITANS ◈', 'WARRIORS ✦', 'STRIKERS ◉', 'ROYALS ♛', 'MAVERICKS ◆'];
+const FALLBACK_SECONDS = 15 * 86400 + 8 * 3600 + 42 * 60 + 33;
+
 export default function App() {
-  const [dark, setDark] = useState(() => localStorage.getItem('dpl-theme') === 'dark');
-  const [secondsLeft, setSecondsLeft] = useState(15 * 86400 + 8 * 3600 + 42 * 60 + 33);
+  const { dark, toggleTheme } = useTheme();
+  const [deadlineAt, setDeadlineAt] = useState<number | null>(null);
+  const [fallbackSeconds, setFallbackSeconds] = useState(FALLBACK_SECONDS);
+  const [now, setNow] = useState(() => Date.now());
+
+  const [playerCount, setPlayerCount] = useState(87);
+  const [capacity, setCapacity] = useState(128);
+  const [totalTeams, setTotalTeams] = useState(16);
+  const [totalMatches, setTotalMatches] = useState(24);
+  const [championLabel, setChampionLabel] = useState('1');
+  const [teams, setTeams] = useState<string[]>(FALLBACK_TEAMS);
+  const [recentPlayers, setRecentPlayers] = useState<RecentPlayer[]>([]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setSecondsLeft((value) => Math.max(0, value - 1)), 1000);
+    let mounted = true;
+    Promise.all([fetchSiteSettings(), fetchTeams(), fetchRegistrationsCount(), fetchRecentPlayers(5)]).then(([settings, teamRows, count, players]) => {
+      if (!mounted) return;
+      if (settings) {
+        if (settings.registration_deadline) setDeadlineAt(new Date(settings.registration_deadline).getTime());
+        setCapacity(settings.player_capacity);
+        setTotalTeams(settings.total_teams);
+        setTotalMatches(settings.total_matches);
+        if (settings.champion) setChampionLabel(settings.champion);
+      }
+      if (teamRows.length) setTeams(teamRows.map((team) => `${team.name} ${team.icon}`.trim()));
+      if (typeof count === 'number') setPlayerCount(count);
+      if (players.length) setRecentPlayers(players);
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+      setFallbackSeconds((value) => Math.max(0, value - 1));
+    }, 1000);
     return () => window.clearInterval(timer);
   }, []);
 
-  function toggleTheme(nextDark: boolean) {
-    setDark(nextDark);
-    localStorage.setItem('dpl-theme', nextDark ? 'dark' : 'light');
-  }
-
+  const secondsLeft = deadlineAt !== null ? Math.max(0, Math.floor((deadlineAt - now) / 1000)) : fallbackSeconds;
+  const spotsLeft = Math.max(0, capacity - playerCount);
+  const meterWidth = capacity > 0 ? Math.min(100, Math.round((playerCount / capacity) * 100)) : 0;
   const days = Math.floor(secondsLeft / 86400);
   const hours = Math.floor((secondsLeft % 86400) / 3600);
   const mins = Math.floor((secondsLeft % 3600) / 60);
@@ -38,35 +75,31 @@ export default function App() {
 
   return (
     <div className={dark ? 'app dark' : 'app'}>
-      <header className="topbar shell">
-        <a className="brand" href="#top" aria-label="DPL home"><span className="brand-mark">DPL</span><span className="brand-text">DPL <b>2026</b><small>DIGITATE PREMIER LEAGUE</small></span></a>
-        <nav className="nav"><a href="#tournament">TOURNAMENT</a><a href="#teams">TEAMS</a><a href="#how">FIXTURES</a><a href="#auction">AUCTION</a><a href="#leaderboard">LEADERBOARD</a><a href="#gallery">GALLERY</a><a href="#about">ABOUT</a></nav>
-        <div className="theme-switch"><button className={!dark ? 'active' : ''} type="button" onClick={() => toggleTheme(false)}>☼ LIGHT</button><button className={dark ? 'active' : ''} type="button" onClick={() => toggleTheme(true)}>☾ DARK</button></div>
-      </header>
+      <SiteHeader dark={dark} onToggleTheme={toggleTheme} />
 
       <main id="top">
         <section className="hero" id="tournament">
           <div className="hero-art" aria-hidden="true" />
           <div className="shell hero-content">
             <div className="kicker"><i /> REGISTRATION LIVE</div>
-            <div className="social-proof"><div className="avatars">{[1, 2, 3, 4, 5].map((avatar) => <i className="avatar" key={avatar} />)}</div><strong>87+</strong> players already joined</div>
+            <div className="social-proof"><div className="avatars">{(recentPlayers.length ? recentPlayers : []).map((player) => player.photo_url ? <img alt={player.name} className="avatar" key={player.id} src={player.photo_url} /> : <i className="avatar" key={player.id} />)}{!recentPlayers.length ? [1, 2, 3, 4, 5].map((avatar) => <i className="avatar" key={avatar} />) : null}</div><strong>{playerCount}+</strong> players already joined</div>
             <h1>FROM DESKS<br /><span>TO GLORY.</span></h1>
             <div className="hero-copy">Same office. Different game.<br />This time, let&apos;s <strong>play for keeps.</strong></div>
-            <div className="actions"><a className="btn btn-primary" href="/Cric/register.html">🏏 I&apos;M IN. REGISTER NOW →</a><a className="btn btn-secondary" href="#how">▶ WATCH HOW IT WORKS</a></div>
-            <div className="hero-stats"><div className="stat"><b>16</b><small>TEAMS</small></div><div className="stat"><b>128</b><small>PLAYERS</small></div><div className="stat"><b>24</b><small>MATCHES</small></div><div className="stat"><b>1</b><small>CHAMPION</small></div></div>
+            <div className="actions"><a className="btn btn-primary" href="/Cric/register">🏏 I&apos;M IN. REGISTER NOW →</a><a className="btn btn-secondary" href="#how">▶ WATCH HOW IT WORKS</a></div>
+            <div className="hero-stats"><div className="stat"><b>{totalTeams}</b><small>TEAMS</small></div><div className="stat"><b>{capacity}</b><small>PLAYERS</small></div><div className="stat"><b>{totalMatches}</b><small>MATCHES</small></div><div className="stat"><b>{championLabel}</b><small>CHAMPION</small></div></div>
           </div>
-          <aside className="hero-panel"><div className="panel-label">DPL 2026 / REGISTRATION WINDOW</div><div className="panel-title">Your spot is waiting.</div><div className="countdown"><div className="time"><b>{time(days)}</b><span>DAYS</span></div><div className="time"><b>{time(hours)}</b><span>HRS</span></div><div className="time"><b>{time(mins)}</b><span>MINS</span></div><div className="time"><b>{time(secs)}</b><span>SECS</span></div></div><div className="capacity"><div className="capacity-head"><span>PLAYER CAPACITY</span><strong><span>87</span> / 128</strong></div><div className="meter"><i /></div><div className="spots">Only <strong>41 spots</strong> left. Don&apos;t sit this one out.</div></div><a className="btn btn-primary panel-cta" href="#register">YES, COUNT ME IN →</a></aside>
+          <FlameWrap className="hero-flame" height={170} radius={20} melt={14} scorch={1.5} ember={2.5} distortion={14} smoke={1.5} rim={3} intensity={0.6}><aside className="hero-panel"><div className="panel-label">DPL 2026 / REGISTRATION WINDOW</div><div className="panel-title">Your spot is waiting.</div><div className="countdown"><div className="time"><b>{time(days)}</b><span>DAYS</span></div><div className="time"><b>{time(hours)}</b><span>HRS</span></div><div className="time"><b>{time(mins)}</b><span>MINS</span></div><div className="time"><b>{time(secs)}</b><span>SECS</span></div></div><div className="capacity"><div className="capacity-head"><span>PLAYER CAPACITY</span><strong><span>{playerCount}</span> / {capacity}</strong></div><div className="meter"><i style={{ width: `${meterWidth}%` }} /></div><div className="spots">Only <strong>{spotsLeft} spots</strong> left. Don&apos;t sit this one out.</div></div><a className="btn btn-primary panel-cta" href="#register">YES, COUNT ME IN →</a></aside></FlameWrap>
         </section>
 
         <section className="ribbon"><div className="shell ribbon-grid">{[['🪑', 'BREAK THE ROUTINE', 'Step out of the chair. Into the game.'], ['🤝', 'TEAM UP', 'Bond beyond projects. Build real teamwork.'], ['🎯', 'COMPETE', 'Challenge rivals. Bring your A-game.'], ['🏆', 'WIN GLORY', 'Lift the trophy. Earn the bragging rights.']].map(([icon, title, copy]) => <div className="ribbon-item" key={title}><div className="ribbon-icon">{icon}</div><div><b>{title}</b><p>{copy}</p></div></div>)}</div></section>
 
         <section className="section" id="how"><div className="shell"><div className="section-head"><div className="eyebrow">FROM SIGN-UP TO TROPHY</div><h2>HOW DPL WORKS</h2><p>One simple journey from your desk to match day. Your player profile follows you all the way to the final.</p></div><div className="steps">{steps.map(([icon, title, copy]) => <article className="step" key={title}><div className="step-dot">{icon}</div><h3>{title}</h3><p>{copy}</p></article>)}</div></div></section>
 
-        <section className="benefits" id="teams"><div className="shell"><div className="section-head"><div className="eyebrow cyan">THE OFFICE. THE TEAMS. THE STORY.</div><h2>DPL IS MORE THAN CRICKET.</h2><p>It&apos;s the part of the year where the person sitting two desks away suddenly becomes your biggest rival.</p></div><div className="benefit-grid"><article className="benefit"><div className="num">01</div><h3>MEET YOUR OTHER TEAM.</h3><p>Forget the org chart for a day. Developers, designers, sales, HR, managers — everyone starts on the same pitch.</p><div className="team-cloud">{['THUNDER ⚡', 'TITANS ◈', 'WARRIORS ✦', 'STRIKERS ◉', 'ROYALS ♛', 'MAVERICKS ◆'].map((team) => <span className="team" key={team}>{team}</span>)}</div></article>{benefits.map(([number, title, copy, id]) => <article className="benefit" id={id} key={number}><div className="num">{number}</div><h3>{title}</h3><p>{copy}</p></article>)}</div></div></section>
+        <section className="benefits" id="teams"><div className="shell"><div className="section-head"><div className="eyebrow cyan">THE OFFICE. THE TEAMS. THE STORY.</div><h2>DPL IS MORE THAN CRICKET.</h2><p>It&apos;s the part of the year where the person sitting two desks away suddenly becomes your biggest rival.</p></div><div className="benefit-grid"><article className="benefit"><div className="num">01</div><h3>MEET YOUR OTHER TEAM.</h3><p>Forget the org chart for a day. Developers, designers, sales, HR, managers — everyone starts on the same pitch.</p><div className="team-cloud">{teams.map((team) => <span className="team" key={team}>{team}</span>)}</div></article>{benefits.map(([number, title, copy, id]) => <article className="benefit" id={id} key={number}><div className="num">{number}</div><h3>{title}</h3><p>{copy}</p></article>)}</div></div></section>
 
-        <section className="cta" id="register"><div className="shell"><div className="eyebrow">YOUR NEXT OFFICE STORY</div><h2>DON&apos;T JUST WORK<br /><span>PLAY TOGETHER.</span></h2><p>Registration takes a minute. The memories last much longer.</p><a className="btn btn-primary" href="/Cric/register.html">🏏 YES, COUNT ME IN →</a></div></section>
+        <section className="cta" id="register"><div className="shell"><div className="eyebrow">YOUR NEXT OFFICE STORY</div><h2>DON&apos;T JUST WORK<br /><span>PLAY TOGETHER.</span></h2><p>Registration takes a minute. The memories last much longer.</p><a className="btn btn-primary" href="/Cric/register">🏏 YES, COUNT ME IN →</a></div></section>
       </main>
-      <footer id="about">DPL 2026 · DIGITATE PREMIER LEAGUE · OFFICE CRICKET · BUILT FOR THE PEOPLE WHO TURN COFFEE BREAKS INTO CRICKET DEBATES. {hasSupabaseConfig ? '· CONNECTED' : '· DEMO MODE'}</footer>
+      <footer id="about">D2P · DPL 2026 · DIGITATE PREMIER LEAGUE · OFFICE CRICKET · BUILT FOR THE PEOPLE WHO TURN COFFEE BREAKS INTO CRICKET DEBATES. {hasSupabaseConfig ? '· CONNECTED' : '· DEMO MODE'}</footer>
     </div>
   );
 }

@@ -23,6 +23,7 @@ alter table public.registrations add column if not exists availability text;
 
 alter table public.registrations enable row level security;
 
+drop policy if exists "Anyone can submit registration" on public.registrations;
 create policy "Anyone can submit registration"
   on public.registrations for insert
   to anon, authenticated
