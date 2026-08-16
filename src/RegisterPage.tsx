@@ -36,7 +36,7 @@ export default function RegisterPage() {
         setMessage('Demo registration saved locally. Connect Supabase to go live.');
       } else {
         void sendConfirmationEmail(trimmed.name, trimmed.email);
-        window.location.href = `/Cric/confirmation?name=${encodeURIComponent(trimmed.name)}&email=${encodeURIComponent(trimmed.email)}`;
+        window.location.href = `/D2P/confirmation?name=${encodeURIComponent(trimmed.name)}&email=${encodeURIComponent(trimmed.email)}`;
       }
       setForm(initialForm);
       selectPhoto(null);

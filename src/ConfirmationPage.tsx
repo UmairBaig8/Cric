@@ -21,7 +21,7 @@ export default function ConfirmationPage() {
             <div><b>02</b><strong>AUCTION DAY</strong><span>Bring your confidence. Find out your team.</span></div>
             <div><b>03</b><strong>MATCH DAY</strong><span>Wear your colours. Make memories.</span></div>
           </div>
-          <a className="btn btn-primary" href="/Cric/">← BACK TO D2P</a>
+          <a className="btn btn-primary" href="/D2P/">← BACK TO D2P</a>
         </div>
       </main>
     </div>

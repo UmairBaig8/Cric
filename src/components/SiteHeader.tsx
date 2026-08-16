@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const navLinks = [
   ['/tournaments', 'TOURNAMENTS'],
@@ -21,10 +22,10 @@ export default function SiteHeader({ dark, onToggleTheme, relative }: SiteHeader
 
   return (
     <header className={relative ? 'topbar shell register-topbar' : 'topbar shell'}>
-      <a className="brand" href="/Cric/" aria-label="D2P home"><img className="brand-mark" src="/Cric/logo-96.png" alt="D2P logo" width="48" height="48" /><span className="brand-text">DPL <b>2026</b><small>DIGITATE PREMIER LEAGUE</small></span></a>
+      <a className="brand" href="/D2P/" aria-label="D2P home"><img className="brand-mark" src="/D2P/logo-96.png" alt="D2P logo" width="48" height="48" /><span className="brand-text">DPL <b>2026</b><small>DIGITATE PREMIER LEAGUE</small></span></a>
       <button className="nav-toggle" type="button" aria-label="Menu" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? '✕' : '☰'}</button>
       <nav className={open ? 'nav open' : 'nav'}>
-        {navLinks.map(([href, label]) => <a key={href} href={href} onClick={() => setOpen(false)}>{label}</a>)}
+        {navLinks.map(([to, label]) => <Link key={to} to={to} onClick={() => setOpen(false)}>{label}</Link>)}
       </nav>
       <div className="theme-switch"><button className={!dark ? 'active' : ''} type="button" aria-label="Light theme" onClick={() => onToggleTheme(false)}>☼</button><button className={dark ? 'active' : ''} type="button" aria-label="Dark theme" onClick={() => onToggleTheme(true)}>☾</button></div>
     </header>

@@ -9,7 +9,7 @@ import './styles.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter basename="/Cric">
+    <BrowserRouter basename="/D2P">
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/register" element={<RegisterPage />} />
