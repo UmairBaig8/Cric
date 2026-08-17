@@ -358,12 +358,16 @@ export default function RegisterPage() {
             </div>
 
             <div className="stepper-step-body">
-              <label className={['reg-photo', fieldError('photo') ? 'has-error' : '', touched.photo && !fieldError('photo') ? 'is-valid' : ''].filter(Boolean).join(' ')}>
+              <label className={['reg-photo reg-player-card', fieldError('photo') ? 'has-error' : '', touched.photo && !fieldError('photo') ? 'is-valid' : ''].filter(Boolean).join(' ')}>
                 <span className="reg-photo-preview">{photoPreview ? <img alt="Preview" src={photoPreview} /> : <i>{initials}</i>}</span>
                 <span className="reg-photo-text">
-                  <strong>{photoPreview ? 'Looking sharp!' : 'Add a selfie'}</strong>
-                  <small>jpg / png / webp · up to 4 MB{photoPreview ? <button type="button" className="reg-photo-clear" onClick={() => selectPhoto(null)}>Remove</button> : null}</small>
+                  <small className="reg-player-card-kicker">DPL 2026 · PLAYER CARD</small>
+                  <strong>{form.name.trim() || 'Your player card'}</strong>
+                  <span className="reg-player-card-role">{form.player_type} · {form.location}</span>
+                  <small>{photoPreview ? 'Profile photo ready' : 'Add a clear photo · JPG / PNG / WEBP · up to 4 MB'}</small>
+                  {photoPreview ? <button type="button" className="reg-photo-clear" onClick={() => selectPhoto(null)}>Remove photo</button> : null}
                 </span>
+                <span className="reg-player-card-badge">{photoPreview ? 'READY' : 'OPTIONAL'}</span>
                 <input accept="image/png,image/jpeg,image/webp" type="file" onChange={(event) => selectPhoto(event.target.files?.[0] ?? null)} />
               </label>
               {fieldError('photo') ? <small className="reg-error">{fieldError('photo')}</small> : null}
