@@ -3,13 +3,11 @@ import { Link } from 'react-router-dom';
 import GlassSurface from './GlassSurface';
 
 const navLinks = [
-  ['/tournaments', 'TOURNAMENTS'],
   ['/teams', 'TEAMS'],
   ['/fixtures', 'FIXTURES'],
   ['/auction', 'AUCTION'],
   ['/leaderboard', 'LEADERBOARD'],
   ['/gallery', 'GALLERY'],
-  ['/about', 'ABOUT'],
 ];
 
 type SiteHeaderProps = {
