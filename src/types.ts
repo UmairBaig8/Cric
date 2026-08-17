@@ -3,14 +3,13 @@ export type Registration = {
   name: string;
   email: string;
   employee_id: string;
-  squad: string;
   gender: Gender;
+  location: Location;
+  dpl_played: boolean;
   player_type: PlayerType;
   batting_style: BattingStyle;
   bowling_style: BowlingStyle;
   bowling_arm: BowlingArm;
-  cricket_experience: string;
-  jersey_size: JerseySize;
   availability: string;
   photo_url?: string | null;
   created_at: string;
@@ -18,10 +17,10 @@ export type Registration = {
 
 export type PlayerType = 'Batter' | 'Bowler' | 'All-rounder' | 'Wicketkeeper-batter';
 export type Gender = 'Male' | 'Female';
+export type Location = 'CZ' | 'SP' | 'Other';
 export type BattingStyle = 'Right-hand batter' | 'Left-hand batter';
 export type BowlingStyle = 'Right-arm pace' | 'Left-arm pace' | 'Right-arm spin' | 'Left-arm spin' | 'Do not bowl';
 export type BowlingArm = 'Right arm' | 'Left arm' | 'Not applicable';
-export type JerseySize = 'S' | 'M' | 'L' | 'XL' | 'XXL';
 export type RegistrationInput = Omit<Registration, 'id' | 'created_at'>;
 
 export type SiteSettings = {

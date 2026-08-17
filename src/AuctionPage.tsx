@@ -10,13 +10,6 @@ const availabilityShort: Record<string, string> = {
   'Need schedule confirmation': 'CONFIRM',
 };
 
-const experienceShort: Record<string, string> = {
-  'New to cricket': 'NEWBIE',
-  'Casual player': 'CASUAL',
-  'Club / college player': 'CLUB',
-  'Experienced league player': 'PRO',
-};
-
 function PlayerCard({ player }: { player: AuctionPlayer }) {
   return (
     <div className="ac-slide">
@@ -32,10 +25,9 @@ function PlayerCard({ player }: { player: AuctionPlayer }) {
       </div>
       <div className="ac-body">
         <strong className="ac-name">{player.name}</strong>
-        <span className="ac-squad">{player.squad}</span>
+        <span className="ac-squad">{player.location}</span>
         <div className="ac-tags">
-          <span>{experienceShort[player.cricket_experience] ?? player.cricket_experience}</span>
-          <span>JERSEY {player.jersey_size}</span>
+          <span className={player.dpl_played ? 'ac-tag-dpl on' : 'ac-tag-dpl'}>{player.dpl_played ? 'DPL VET' : 'DPL ROOKIE'}</span>
         </div>
         <div className="ac-styles">
           <span>{player.batting_style}</span>
@@ -70,7 +62,7 @@ export default function AuctionPage() {
 
   const filtered = query.trim()
     ? players.filter((player) =>
-        `${player.name} ${player.player_type} ${player.squad} ${player.gender}`.toLowerCase().includes(query.trim().toLowerCase()),
+        `${player.name} ${player.player_type} ${player.location} ${player.gender}`.toLowerCase().includes(query.trim().toLowerCase()),
       )
     : players;
 

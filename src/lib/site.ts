@@ -32,8 +32,7 @@ export type PlayerCard = {
   name: string;
   photo_url: string | null;
   player_type: string;
-  squad: string;
-  jersey_size: string;
+  location: string;
   created_at: string;
 };
 
@@ -49,10 +48,9 @@ export type AuctionPlayer = {
   employee_id: string;
   photo_url: string | null;
   player_type: string;
-  squad: string;
   gender: string;
-  jersey_size: string;
-  cricket_experience: string;
+  location: string;
+  dpl_played: boolean;
   availability: string;
   batting_style: string;
   bowling_style: string;
