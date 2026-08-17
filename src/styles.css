@@ -128,7 +128,9 @@
 @media(max-width:820px){.stepper-steps{grid-template-columns:repeat(4,1fr)}.stepper-label{font-size:8px;letter-spacing:1px}.stepper-btn{padding:0 14px}}
 @media(max-width:560px){.stepper-indicator{padding:0 2px 4px}.stepper-track{top:13px}.stepper-dot{width:28px;height:28px;font-size:11px}.stepper-label{display:none}.stepper-footer{position:static}.reg-summary{grid-template-columns:1fr}}
 .ac-tag-dpl{border-color:rgba(255,176,58,.45)!important;color:#ffb03a!important}.ac-tag-dpl.on{background:linear-gradient(135deg,rgba(255,176,58,.2),rgba(255,138,58,.12));border-color:rgba(255,176,58,.6)!important;color:#ffc463!important}
-.teams-page{min-height:100vh;background:#030914;position:relative;display:flex;flex-direction:column}
+.teams-page{min-height:100vh;background:url('/D2P/teams.png') center center/cover no-repeat fixed;background-color:#030914;position:relative;display:flex;flex-direction:column}
+.teams-page:before{content:'';position:absolute;inset:0;background:rgba(3,9,20,.78);pointer-events:none}
+.teams-page>*{position:relative}
 .teams-page footer{margin-top:auto;padding:25px;text-align:center;color:#5b6f7e;font-size:9px;border-top:1px solid #1c2b3a}
 .teams-main{flex:1;width:min(1400px,92%);margin:0 auto;padding:110px 0 70px}
 .teams-head{text-align:center}
