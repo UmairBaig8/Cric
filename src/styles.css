@@ -128,14 +128,28 @@
 @media(max-width:820px){.stepper-steps{grid-template-columns:repeat(4,1fr)}.stepper-label{font-size:8px;letter-spacing:1px}.stepper-btn{padding:0 14px}}
 @media(max-width:560px){.stepper-indicator{padding:0 2px 4px}.stepper-track{top:13px}.stepper-dot{width:28px;height:28px;font-size:11px}.stepper-label{display:none}.stepper-footer{position:static}.reg-summary{grid-template-columns:1fr}}
 .ac-tag-dpl{border-color:rgba(255,176,58,.45)!important;color:#ffb03a!important}.ac-tag-dpl.on{background:linear-gradient(135deg,rgba(255,176,58,.2),rgba(255,138,58,.12));border-color:rgba(255,176,58,.6)!important;color:#ffc463!important}
-.teams-page{min-height:100vh;background:url('/D2P/teams.png') center center/cover no-repeat fixed;background-color:#eef3f6;position:relative;display:flex;flex-direction:column}
-.teams-page:before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,11,20,.55),rgba(5,11,20,.25) 40%,rgba(5,11,20,.72));pointer-events:none}
-.teams-page>*{position:relative}
-.teams-page footer{margin-top:auto;padding:25px;text-align:center;color:#c9d6e0;font-size:9px;border-top:1px solid rgba(255,255,255,.14)}
-.teams-main{flex:1;display:grid;place-items:center;padding:60px 0}
-.teams-card{width:100%;max-width:620px;text-align:center;background:rgba(7,16,28,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.18);border-radius:24px;padding:56px 48px;box-shadow:0 24px 60px rgba(5,11,20,.45);color:#fff}
-.teams-card .eyebrow{color:#7ee0ea}
-.teams-card h1{font:900 italic clamp(56px,9vw,84px)/.85 'Barlow Condensed';letter-spacing:-1px;margin:14px 0 6px}
-.teams-card h1 span{background:linear-gradient(90deg,var(--orange),var(--pink),var(--purple));-webkit-background-clip:text;background-clip:text;color:transparent}
-.teams-copy{color:#c3d2dd;font-size:15px;line-height:1.65;max-width:440px;margin:0 auto 32px}
-@media(max-width:560px){.teams-card{padding:44px 24px}.teams-card h1{font-size:clamp(46px,13vw,64px)}}
+.teams-page{min-height:100vh;background:#030914;position:relative;display:flex;flex-direction:column}
+.teams-page footer{margin-top:auto;padding:25px;text-align:center;color:#5b6f7e;font-size:9px;border-top:1px solid #1c2b3a}
+.teams-main{flex:1;width:min(1400px,92%);margin:0 auto;padding:110px 0 70px}
+.teams-head{text-align:center}
+.teams-head .eyebrow{color:#28dce8}
+.teams-head h1{font:900 italic clamp(56px,8vw,96px)/.82 'Barlow Condensed';letter-spacing:-1px;margin:10px 0}
+.teams-head h1 span{background:linear-gradient(90deg,var(--orange),var(--pink),var(--purple));-webkit-background-clip:text;background-clip:text;color:transparent}
+.teams-desc{color:#7890a8;font-size:11px;letter-spacing:.2px;max-width:550px;margin:15px auto 42px;line-height:1.7}
+.teams-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:15px}
+.team-card{height:330px;position:relative;overflow:hidden;border-radius:20px;border:1px solid rgba(168,216,255,.14);background:#071423;cursor:pointer;transition:transform .45s cubic-bezier(.4,0,.2,1),border-color .45s cubic-bezier(.4,0,.2,1),box-shadow .45s cubic-bezier(.4,0,.2,1);isolation:isolate}
+.team-card:hover{transform:translateY(-8px) scale(1.015);border-color:var(--accent);box-shadow:0 25px 55px rgba(0,0,0,.7),0 0 35px var(--glow)}
+.team-sprite{position:absolute;inset:0;overflow:hidden}
+.team-sprite img{position:absolute;width:500%;height:200%;max-width:none;max-height:none;left:calc(var(--col)*-25%);top:calc(var(--row)*-100%);transition:transform .55s cubic-bezier(.4,0,.2,1);filter:saturate(1.08) contrast(1.05)}
+.team-card:hover img{transform:scale(1.045);filter:saturate(1.3) contrast(1.08)}
+.team-card:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(2,8,19,0) 25%,rgba(2,8,19,.91) 100%),radial-gradient(circle at 50% 35%,transparent 20%,rgba(2,8,19,.4) 100%);z-index:1;pointer-events:none}
+.team-meta{position:absolute;z-index:2;left:16px;right:16px;bottom:15px}
+.team-code{font-size:7px;font-weight:900;letter-spacing:.2em;color:var(--accent);margin-bottom:5px}
+.team-name{font:900 25px/.88 'Barlow Condensed';text-transform:uppercase}
+.team-players{font-size:7px;color:#9eb2c4;margin-top:8px;font-weight:700}
+.team-arrow{position:absolute;right:0;bottom:0;width:29px;height:29px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);transition:background .3s ease,transform .3s ease,color .3s ease}
+.team-card:hover .team-arrow{background:var(--accent);color:#03101b;transform:rotate(-35deg)}
+.kings{--accent:#ffc22e;--glow:#ffc22e33}.mavale{--accent:#ff6b24;--glow:#ff6b2433}.mitra{--accent:#35e783;--glow:#35e78333}.blaster{--accent:#ff9d1c;--glow:#ff9d1c33}.dhada{--accent:#28a9ff;--glow:#28a9ff33}.wala{--accent:#a4ef31;--glow:#a4ef3133}.titans{--accent:#48aaff;--glow:#48aaff33}.yodhas{--accent:#ff7c27;--glow:#ff7c2733}.gallit{--accent:#d9ff24;--glow:#d9ff2433}.dhurandhars{--accent:#e9b94d;--glow:#e9b94d33}
+@media(max-width:1100px){.teams-grid{grid-template-columns:repeat(3,1fr)}.teams-main{padding:90px 0 60px}}
+@media(max-width:650px){.teams-grid{grid-template-columns:repeat(2,1fr)}.team-card{height:290px}.teams-main{padding:70px 0 50px}}
+@media(max-width:430px){.teams-grid{grid-template-columns:1fr}}
