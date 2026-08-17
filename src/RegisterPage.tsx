@@ -51,7 +51,7 @@ export default function RegisterPage() {
   }
 
   function stepValid() {
-    if (step === 0) return Boolean(form.name.trim() && form.email.trim() && form.employee_id.trim() && empIdStatus === 'free');
+    if (step === 0) return Boolean(form.name.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && form.employee_id.trim() && empIdStatus === 'free');
     if (step === 1) return Boolean(form.player_type && form.batting_style && form.bowling_style && form.availability);
     return true;
   }
@@ -113,8 +113,8 @@ export default function RegisterPage() {
                   <label>Employee ID <em className="req-star">*</em><input autoComplete="off" required inputMode="numeric" pattern="[0-9]{7,8}" title="Enter your 7–8 digit employee ID" maxLength={8} placeholder="e.g. 12345678" value={form.employee_id} onChange={(event) => setForm({ ...form, employee_id: event.target.value.replace(/[^0-9]/g, '') })} />{empIdStatus === 'checking' ? <em className="emp-hint checking">Checking…</em> : empIdStatus === 'free' ? <em className="emp-hint free">✓ Great — this ID is ready to go.</em> : empIdStatus === 'taken' ? <em className="emp-hint taken">✓ Already done — this employee ID is already registered. You&apos;re all set!</em> : null}</label>
                   <label>Squad<input autoComplete="organization" minLength={2} placeholder="e.g. Engineering, Design, Sales" value={form.squad} onChange={(event) => setForm({ ...form, squad: event.target.value })} /></label>
                 </div>
-                <label>Full name<input autoComplete="name" required minLength={2} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
-                <label>Work email<input autoComplete="email" required type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
+                <label>Full name <em className="req-star">*</em><input autoComplete="name" required minLength={2} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
+                <label>Work email <em className="req-star">*</em><input autoComplete="email" required type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
                 <div className="gender-picker" role="group" aria-label="Gender">
                   {(['Male', 'Female'] as const).map((option) => (
                     <button type="button" className={form.gender === option ? 'on' : ''} key={option} onClick={() => setForm({ ...form, gender: option })}>{option}</button>
