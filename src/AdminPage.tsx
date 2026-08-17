@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import SiteHeader from './components/SiteHeader';
+import BorderGlow from './components/BorderGlow';
 import { useTheme } from './lib/useTheme';
 import { supabase as supabaseRef } from './lib/supabase';
 import {
@@ -101,7 +102,8 @@ export default function AdminPage() {
       <div className={dark ? 'app dark admin-page' : 'app admin-page'}>
         <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
         <main className="admin-main shell">
-          <form className="admin-login" onSubmit={handleLogin}>
+          <BorderGlow className="admin-login-glow" backgroundColor="#0b1420" colors={['#09c9d8', '#873cff', '#2f7dff']} glowColor="196 100 48" glowIntensity={1.05} glowRadius={26} edgeSensitivity={24} borderRadius={18}>
+            <form className="admin-login" onSubmit={handleLogin}>
             <div className="admin-login-icon">🛠️</div>
             <h1>ADMIN ACCESS</h1>
             <p>Sign in with your Supabase Auth account to manage DPL 2026.</p>
@@ -114,6 +116,7 @@ export default function AdminPage() {
             {loginError && <div className="admin-error">{loginError}</div>}
             <button className="btn btn-primary" type="submit" disabled={busy}>{busy ? 'SIGNING IN…' : 'SIGN IN'}</button>
           </form>
+          </BorderGlow>
         </main>
       </div>
     );

@@ -4,6 +4,7 @@ import { sendConfirmationEmail } from './lib/email';
 import { useTheme } from './lib/useTheme';
 import SiteHeader from './components/SiteHeader';
 import Stepper from './components/Stepper';
+import BorderGlow from './components/BorderGlow';
 import type { RegistrationInput } from './types';
 
 const initialForm: RegistrationInput = {
@@ -198,7 +199,18 @@ export default function RegisterPage() {
     <div className={dark ? 'app dark register-page' : 'app register-page'}>
       <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
       <main className="register-main shell">
-        <form className="registration-form registration-card" onSubmit={submit} noValidate>
+        <BorderGlow
+          className="registration-glow"
+          backgroundColor="#071426"
+          colors={['#09c9d8', '#873cff', '#2f7dff']}
+          glowColor="196 100 48"
+          glowIntensity={1.15}
+          glowRadius={30}
+          edgeSensitivity={22}
+          borderRadius={24}
+          animated
+        >
+          <form className="registration-form registration-card" onSubmit={submit} noValidate>
           <div className="reg-top">
             <div className="reg-title">
               <span className="reg-eyebrow">DPL 2026 · PLAYER REGISTRATION</span>
@@ -407,7 +419,8 @@ export default function RegisterPage() {
 
           {message ? <p className={`reg-message ${message.kind}`} role="status">{message.text}</p> : null}
           <small className="reg-note">Your details are used for DPL 2026 registration and team selection only.</small>
-        </form>
+          </form>
+        </BorderGlow>
       </main>
       <footer>DPL 2026 · DIGITATE PREMIER LEAGUE · OFFICE CRICKET</footer>
     </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import SiteHeader from './components/SiteHeader';
+import BorderGlow from './components/BorderGlow';
 import { useTheme } from './lib/useTheme';
 import { fetchTeamsList, fetchTeamRoster, type TeamRow, type TeamRosterPlayer } from './lib/site';
 
@@ -91,14 +92,16 @@ function TeamDetail({
       <main className="teams-main shell">
         <Link className="team-back" to="/teams">← ALL TEAMS</Link>
         <div className="team-hero">
-          <div className="team-hero-icon">
-            <img src={img} alt={name} />
-            {champion && (
-              <span className="team-champion team-champion--hero" title="DPL 2025 Champions" aria-label="DPL 2025 Champions">
-                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.6 6.6 7 .6-5.3 4.6 1.6 6.9L12 17.3l-5.9 3.4 1.6-6.9L2.4 9.2l7-.6z"/></svg>
-              </span>
-            )}
-          </div>
+          <BorderGlow className="team-hero-glow" backgroundColor="#0b1420" colors={['#2f7dff', '#09c9d8', '#873cff']} glowColor="215 100 60" glowIntensity={1} glowRadius={24} edgeSensitivity={26} borderRadius={22}>
+            <div className="team-hero-icon">
+              <img src={img} alt={name} />
+              {champion && (
+                <span className="team-champion team-champion--hero" title="DPL 2025 Champions" aria-label="DPL 2025 Champions">
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.6 6.6 7 .6-5.3 4.6 1.6 6.9L12 17.3l-5.9 3.4 1.6-6.9L2.4 9.2l7-.6z"/></svg>
+                </span>
+              )}
+            </div>
+          </BorderGlow>
           <div className="team-hero-info">
             <div className="eyebrow">
               {code} · DPL 2026{champion ? ' · DEFENDING CHAMPIONS' : ''}
