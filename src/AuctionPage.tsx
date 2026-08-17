@@ -16,13 +16,30 @@ const experienceShort: Record<string, string> = {
   'Experienced league player': 'PRO',
 };
 
+const PAGE_SIZE = 24;
+
 export default function AuctionPage() {
   const { dark, toggleTheme } = useTheme();
   const [players, setPlayers] = useState<AuctionPlayer[]>([]);
+  const [visible, setVisible] = useState(PAGE_SIZE);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
-    void fetchAuctionPlayers().then(setPlayers);
+    void fetchAuctionPlayers().then((data) => {
+      setPlayers(data);
+      setVisible(PAGE_SIZE);
+      setLoading(false);
+    });
   }, []);
+
+  const filtered = query.trim()
+    ? players.filter((player) =>
+        `${player.name} ${player.player_type} ${player.squad} ${player.gender}`.toLowerCase().includes(query.trim().toLowerCase()),
+      )
+    : players;
+
+  const shown = filtered.slice(0, visible);
 
   return (
     <div className={dark ? 'app dark auction-page' : 'app auction-page'}>
@@ -34,11 +51,15 @@ export default function AuctionPage() {
           <h1>READY FOR<br /><span>AUCTION.</span></h1>
           <p>Every registered player is up for grabs. Study the profile, set your price, bid on auction day.</p>
           <div className="auction-count">{players.length} PLAYERS IN THE POOL</div>
+          <div className="auction-search"><input value={query} onChange={(event) => { setQuery(event.target.value); setVisible(PAGE_SIZE); }} placeholder="Search name, role, squad, gender…" /></div>
         </section>
-        {players.length ? (
-          <div className="auction-grid">
-            {players.map((player) => (
-              <article className="auction-card" key={player.id}>
+        {loading ? (
+          <div className="auction-empty"><div className="auction-empty-badge">⚒</div><h2>LOADING PLAYERS…</h2></div>
+        ) : filtered.length ? (
+          <>
+            <div className="auction-grid">
+              {shown.map((player) => (
+                <article className="auction-card" key={player.id}>
                 <div className="auction-card-top">
                   <span className="ac-league">D2P <b>2026</b></span>
                   <span className="ac-no">#{player.employee_id}</span>
@@ -72,13 +93,19 @@ export default function AuctionPage() {
                 </div>
               </article>
             ))}
-          </div>
+            </div>
+            {visible < filtered.length ? (
+              <div className="auction-more">
+                <button type="button" className="btn btn-ghost" onClick={() => setVisible((count) => count + PAGE_SIZE)}>LOAD MORE PLAYERS ({filtered.length - visible} LEFT) ↓</button>
+              </div>
+            ) : null}
+          </>
         ) : (
           <div className="auction-empty">
-            <div className="auction-empty-badge">⚒</div>
-            <h2>NO PLAYERS YET</h2>
-            <p>Players registered so far will appear here as soon as they sign up.</p>
-            <a className="btn btn-primary" href="/D2P/register">🏏 REGISTER AS A PLAYER →</a>
+            <div className="auction-empty-badge">{query.trim() ? '🔍' : '⚒'}</div>
+            <h2>{query.trim() ? 'NO MATCHES' : 'NO PLAYERS YET'}</h2>
+            <p>{query.trim() ? `Nothing matches "${query.trim()}". Try a different search.` : 'Players registered so far will appear here as soon as they sign up.'}</p>
+            {query.trim() ? null : <a className="btn btn-primary" href="/D2P/register">🏏 REGISTER AS A PLAYER →</a>}
           </div>
         )}
       </main>
