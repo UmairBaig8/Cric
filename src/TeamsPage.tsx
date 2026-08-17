@@ -10,7 +10,6 @@ export default function TeamsPage() {
       <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
       <main className="teams-main shell">
         <div className="teams-head">
-          <div className="eyebrow">D2P 2026 · THE LEAGUE</div>
           <h1>MEET THE <span>TEAMS.</span></h1>
           <p className="teams-desc">Ten teams. Ten identities. One trophy. Meet the squads stepping out of the office and onto the pitch.</p>
         </div>
