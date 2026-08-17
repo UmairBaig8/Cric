@@ -1,5 +1,5 @@
-import { FormEvent, useState } from 'react';
-import { registerPlayer } from './lib/registrations';
+import { FormEvent, useEffect, useState } from 'react';
+import { registerPlayer, checkEmployeeExists } from './lib/registrations';
 import { sendConfirmationEmail } from './lib/email';
 import { useTheme } from './lib/useTheme';
 import SiteHeader from './components/SiteHeader';
@@ -20,6 +20,30 @@ export default function RegisterPage() {
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState(0);
+  const [empIdStatus, setEmpIdStatus] = useState<'idle' | 'checking' | 'free' | 'taken'>('idle');
+
+  useEffect(() => {
+    let cancelled = false;
+    const id = form.employee_id.trim();
+    if (id.length < 7) {
+      setEmpIdStatus('idle');
+      return;
+    }
+    setEmpIdStatus('checking');
+    const timer = window.setTimeout(() => {
+      checkEmployeeExists(id)
+        .then((exists) => {
+          if (!cancelled) setEmpIdStatus(exists ? 'taken' : 'free');
+        })
+        .catch(() => {
+          if (!cancelled) setEmpIdStatus('idle');
+        });
+    }, 450);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [form.employee_id]);
 
   function selectPhoto(file: File | null) {
     setPhoto(file);
@@ -27,7 +51,7 @@ export default function RegisterPage() {
   }
 
   function stepValid() {
-    if (step === 0) return Boolean(form.name.trim() && form.email.trim() && form.employee_id.trim() && form.squad.trim());
+    if (step === 0) return Boolean(form.name.trim() && form.email.trim() && form.employee_id.trim() && form.squad.trim() && empIdStatus === 'free');
     if (step === 1) return Boolean(form.player_type && form.batting_style && form.bowling_style && form.availability);
     return true;
   }
@@ -49,7 +73,12 @@ export default function RegisterPage() {
       setForm(initialForm);
       selectPhoto(null);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Registration failed. Try again.');
+      const raw = error instanceof Error ? error.message : String(error);
+      if (raw.toLowerCase().includes('duplicate') || raw.toLowerCase().includes('unique constraint')) {
+        setMessage("Looks like you've already registered with this employee ID. You're all set — see you on the pitch!");
+      } else {
+        setMessage(error instanceof Error ? error.message : 'Registration failed. Try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -80,15 +109,17 @@ export default function RegisterPage() {
             <Step>
               <fieldset>
                 <legend>ABOUT YOU</legend>
+                <div className="form-grid form-grid-2">
+                  <label>Employee ID<small>Your unique Digitate employee ID (7–8 digit number)</small><input autoComplete="off" required inputMode="numeric" pattern="[0-9]{7,8}" title="Enter your 7–8 digit employee ID" maxLength={8} placeholder="e.g. 12345678" value={form.employee_id} onChange={(event) => setForm({ ...form, employee_id: event.target.value.replace(/[^0-9]/g, '') })} />{empIdStatus === 'checking' ? <em className="emp-hint checking">Checking…</em> : empIdStatus === 'free' ? <em className="emp-hint free">✓ Great — this ID is ready to go.</em> : empIdStatus === 'taken' ? <em className="emp-hint taken">✓ Already done — this employee ID is already registered. You&apos;re all set!</em> : null}</label>
+                  <label>Squad<small>Your functional group within the project</small><input autoComplete="organization" required minLength={2} placeholder="e.g. Engineering, Design, Sales" value={form.squad} onChange={(event) => setForm({ ...form, squad: event.target.value })} /></label>
+                </div>
                 <label>Full name<input autoComplete="name" required minLength={2} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
+                <label>Work email<input autoComplete="email" required type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
                 <div className="gender-picker" role="group" aria-label="Gender">
                   {(['Male', 'Female'] as const).map((option) => (
                     <button type="button" className={form.gender === option ? 'on' : ''} key={option} onClick={() => setForm({ ...form, gender: option })}>{option}</button>
                   ))}
                 </div>
-                <label>Work email<input autoComplete="email" required type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
-                <label>Employee ID<small>Your unique Digitate employee ID (7–8 digit number)</small><input autoComplete="off" required inputMode="numeric" pattern="[0-9]{7,8}" title="Enter your 7–8 digit employee ID" maxLength={8} placeholder="e.g. 12345678" value={form.employee_id} onChange={(event) => setForm({ ...form, employee_id: event.target.value.replace(/[^0-9]/g, '') })} /></label>
-                <label>Squad<small>Your functional group within the project</small><input autoComplete="organization" required minLength={2} placeholder="e.g. Engineering, Design, Sales" value={form.squad} onChange={(event) => setForm({ ...form, squad: event.target.value })} /></label>
               </fieldset>
             </Step>
             <Step>
@@ -122,17 +153,17 @@ export default function RegisterPage() {
               <fieldset>
                 <legend>CONFIRM</legend>
                 <div className="confirm-card">
+                  <div className="confirm-card-head"><span>D2P 2026 · PLAYER CARD</span><span># {form.employee_id.trim() || '—'}</span></div>
                   <div className="confirm-photo">{photoPreview ? <img alt="Your photo" src={photoPreview} /> : <i>{initials}</i>}</div>
                   <strong>{form.name.trim() || 'YOUR NAME'}</strong>
                   <em>{form.player_type} · {form.batting_style} · {form.bowling_style}</em>
                   <div className="confirm-lines">
                     <span><b>SQUAD</b>{form.squad.trim() || '—'}</span>
-                    <span><b>EMPLOYEE ID</b>{form.employee_id.trim() || '—'}</span>
                     <span><b>EXPERIENCE</b>{form.cricket_experience}</span>
                     <span><b>JERSEY</b>{form.jersey_size}</span>
                     <span><b>AVAILABILITY</b>{form.availability}</span>
                   </div>
-                  <small className="confirm-cta">Looks good? Lock it in.</small>
+                  <small className="confirm-cta">Looks good? Lock it in. 🏏</small>
                 </div>
               </fieldset>
             </Step>

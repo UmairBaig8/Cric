@@ -3,6 +3,16 @@ import type { RegistrationInput } from '../types';
 
 const PHOTO_BUCKET = 'player-photos';
 
+export async function checkEmployeeExists(employeeId: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { count, error } = await supabase
+    .from('registrations')
+    .select('*', { count: 'exact', head: true })
+    .eq('employee_id', employeeId);
+  if (error) throw new Error(error.message);
+  return Boolean(count && count > 0);
+}
+
 async function uploadPhoto(file: File): Promise<string> {
   if (!supabase) throw new Error('Database not connected');
   const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
