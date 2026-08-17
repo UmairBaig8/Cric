@@ -46,17 +46,13 @@ export default function AuctionPage() {
       <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
       <main className="auction-main shell">
         <section className="auction-head">
-          <div className="auction-head-copy">
-            <div className="kicker"><i /> DPL 2026</div>
-            <p className="eyebrow">AVAILABLE PLAYERS</p>
-            <h1>READY FOR<br /><span>AUCTION.</span></h1>
-            <p>Every registered player is up for grabs. Study the profile, set your price, bid on auction day.</p>
-          </div>
-          <div className="auction-head-side">
-            <div className="auction-count">{players.length} PLAYERS IN THE POOL</div>
-            <div className="auction-search"><input value={query} onChange={(event) => { setQuery(event.target.value); setVisible(PAGE_SIZE); }} placeholder="Search name, role, squad, gender…" /></div>
-          </div>
+          <h1>READY FOR<br /><span>AUCTION.</span></h1>
+          <p>Every registered player is up for grabs. Study the profile, set your price, bid on auction day.</p>
         </section>
+        <div className="auction-toolbar">
+          <div className="auction-count">{players.length} PLAYERS IN THE POOL</div>
+          <div className="auction-search"><input value={query} onChange={(event) => { setQuery(event.target.value); setVisible(PAGE_SIZE); }} placeholder="Search name, role, squad, gender…" /></div>
+        </div>
         {loading ? (
           <div className="auction-empty"><div className="auction-empty-badge">⚒</div><h2>LOADING PLAYERS…</h2></div>
         ) : filtered.length ? (
