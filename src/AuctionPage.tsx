@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTheme } from './lib/useTheme';
 import SiteHeader from './components/SiteHeader';
 import DepthCarousel from './components/DepthCarousel';
+import SpotlightCard from './components/SpotlightCard';
 import { fetchAuctionPlayers, type AuctionPlayer } from './lib/site';
 
 const availabilityShort: Record<string, string> = {
@@ -11,39 +12,52 @@ const availabilityShort: Record<string, string> = {
 };
 
 function PlayerCard({ player }: { player: AuctionPlayer }) {
+  const avail = player.availability === 'Available for all matches' ? 3 : player.availability === 'Available for most matches' ? 2 : 1;
+  const availLabel = availabilityShort[player.availability] ?? player.availability;
   return (
-    <div className="ac-slide">
-      <div className="auction-card-top">
-        <span className="ac-league">DPL <b>2026</b></span>
-        <span className="ac-no">#{player.employee_id}</span>
-      </div>
-      <div className="ac-photo">
-        {player.photo_url ? <img alt={player.name} src={player.photo_url} /> : <span className="ac-photo-fallback"><i>{player.name.split(' ').map((word) => word[0]).slice(0, 2).join('')}</i></span>}
-        <span className="ac-photo-grad" />
-        <span className="ac-role">{player.player_type}</span>
-        <span className={`ac-gender ${player.gender?.toLowerCase()}`}>{player.gender === 'Female' ? '♀' : '♂'}</span>
-      </div>
-      <div className="ac-body">
-        <strong className="ac-name">{player.name}</strong>
-        <span className="ac-squad">{player.location}</span>
-        <div className="ac-tags">
-          <span className={player.dpl_played ? 'ac-tag-dpl on' : 'ac-tag-dpl'}>{player.dpl_played ? 'DPL VET' : 'DPL ROOKIE'}</span>
+    <SpotlightCard className="ac-card-spotlight" spotlightColor="rgba(255, 255, 255, 0.16)">
+      <div className="ac-slide">
+        <div className="auction-card-top">
+          <span className="ac-league">DPL <b>2026</b></span>
+          <span className="ac-no">#{player.employee_id}</span>
         </div>
-        <div className="ac-styles">
-          <span>{player.batting_style}</span>
-          <span>{player.bowling_style}</span>
+        <div className="ac-photo">
+          {player.photo_url ? <img alt={player.name} src={player.photo_url} /> : <span className="ac-photo-fallback"><i>{player.name.split(' ').map((word) => word[0]).slice(0, 2).join('')}</i></span>}
+          <span className="ac-photo-grad" />
+          <span className="ac-role">{player.player_type}</span>
+          <span className={`ac-gender ${player.gender?.toLowerCase()}`}>{player.gender === 'Female' ? '♀' : '♂'}</span>
         </div>
-        <div className="ac-avail">
-          <i className={player.availability === 'Available for all matches' ? 'on' : player.availability === 'Available for most matches' ? 'mid' : 'low'} />
-          {availabilityShort[player.availability] ?? player.availability}
+        <div className="ac-body">
+          <strong className="ac-name">{player.name}</strong>
+          <span className="ac-squad"><span className="ac-squad-dot" />{player.location}</span>
+          <div className="ac-rating" aria-label={`${player.self_rating} out of 5 stars`}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <svg key={star} viewBox="0 0 24 24" className={star <= player.self_rating ? 'on' : ''} fill="currentColor" aria-hidden="true"><path d="M12 2l2.6 6.6 7 .6-5.3 4.6 1.6 6.9L12 17.3l-5.9 3.4 1.6-6.9L2.4 9.2l7-.6z"/></svg>
+            ))}
+            <span className="ac-rating-num">{player.self_rating}.0</span>
+          </div>
+          <div className="ac-chips">
+            <span className="ac-chip"><i className="ac-chip-icon">🏏</i>{player.batting_style.replace('hand batter', '')}</span>
+            <span className="ac-chip"><i className="ac-chip-icon">🎯</i>{player.bowling_style.replace('Do not bowl', 'NO BOWL')}</span>
+          </div>
+          <div className="ac-avail">
+            <div className="ac-avail-head"><span>AVAILABILITY</span><b>{availLabel}</b></div>
+            <div className="ac-avail-bar"><i className={`lvl-${avail}`} /></div>
+          </div>
+        </div>
+        <div className="ac-bid">
+          <div className="ac-bid-top">
+            <span className={`ac-bid-status${player.dpl_played ? ' vet' : ''}`}>{player.dpl_played ? '★' : '·'} {player.dpl_played ? 'DPL VET' : 'DPL ROOKIE'}</span>
+            <span className="ac-bid-label">OPENING BID</span>
+          </div>
+          <div className="ac-bid-amount">
+            <span className="ac-bid-cur">₹</span>
+            <b>0</b>
+            <small>/BASE</small>
+          </div>
         </div>
       </div>
-      <div className="ac-bid">
-        <span>OPENING BID</span>
-        <b>₹0</b>
-        <small>BID ON AUCTION DAY</small>
-      </div>
-    </div>
+    </SpotlightCard>
   );
 }
 

@@ -51,6 +51,7 @@ export type AuctionPlayer = {
   gender: string;
   location: string;
   dpl_played: boolean;
+  self_rating: number;
   availability: string;
   batting_style: string;
   bowling_style: string;
@@ -110,6 +111,7 @@ export type AdminPlayer = {
   gender: string;
   location: string;
   dpl_played: boolean;
+  self_rating: number;
   created_at: string;
   team_id: string | null;
   team_code: string | null;

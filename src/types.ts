@@ -6,6 +6,7 @@ export type Registration = {
   gender: Gender;
   location: Location;
   dpl_played: boolean;
+  self_rating: number;
   player_type: PlayerType;
   batting_style: BattingStyle;
   bowling_style: BowlingStyle;

@@ -8,7 +8,7 @@ import BorderGlow from './components/BorderGlow';
 import type { RegistrationInput } from './types';
 
 const initialForm: RegistrationInput = {
-  name: '', email: '', employee_id: '', gender: 'Male', location: 'CZ', dpl_played: false,
+  name: '', email: '', employee_id: '', gender: 'Male', location: 'CZ', dpl_played: false, self_rating: 3,
   player_type: 'Batter', batting_style: 'Right-hand batter',
   bowling_style: 'Do not bowl', bowling_arm: 'Not applicable', availability: 'Available for all matches',
 };
@@ -53,6 +53,7 @@ function validateField(field: FieldName, value: string | File | null, empStatus:
     case 'bowling_style':
     case 'bowling_arm':
     case 'availability':
+    case 'self_rating':
       if (!value) return 'Select an option.';
       return '';
     case 'photo': {
@@ -113,7 +114,7 @@ export default function RegisterPage() {
     return errors[field] ?? '';
   }
 
-  function setField(field: keyof RegistrationInput, value: string | boolean) {
+  function setField(field: keyof RegistrationInput, value: string | boolean | number) {
     setForm((prev) => ({ ...prev, [field]: value as never }));
     setErrors((prev) => ({ ...prev, [field]: validateField(field, String(value ?? ''), empStatus) }));
   }
@@ -150,7 +151,7 @@ export default function RegisterPage() {
   async function submit(event?: FormEvent<HTMLFormElement>) {
     if (event) event.preventDefault();
     setTouched({ employee_id: true, name: true, email: true });
-    const fields: FieldName[] = ['employee_id', 'name', 'email', 'gender', 'location', 'player_type', 'batting_style', 'bowling_style', 'bowling_arm', 'availability', 'photo'];
+    const fields: FieldName[] = ['employee_id', 'name', 'email', 'gender', 'location', 'player_type', 'batting_style', 'bowling_style', 'bowling_arm', 'availability', 'self_rating', 'photo'];
     const nextErrors: Errors = {};
     for (const field of fields) nextErrors[field] = validateField(field, fieldValue(field), empStatus);
     setErrors(nextErrors);
@@ -360,6 +361,23 @@ export default function RegisterPage() {
                     ))}
                   </div>
                 </div>
+                <div className="reg-field reg-rating">
+                  <span className="reg-label">Rate your game <em className="reg-opt">(1–5)</em></span>
+                  <div className="reg-rating-stars" role="radiogroup" aria-label="Self rating">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={form.self_rating === star}
+                        className={star <= form.self_rating ? 'on' : ''}
+                        key={star}
+                        onClick={() => setField('self_rating', star)}
+                      >
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.6 6.6 7 .6-5.3 4.6 1.6 6.9L12 17.3l-5.9 3.4 1.6-6.9L2.4 9.2l7-.6z"/></svg>
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div {...fieldProps('availability')}>
                   <label htmlFor="availability">Match availability</label>
                   <div className="reg-select-wrap">
@@ -412,6 +430,7 @@ export default function RegisterPage() {
                 <div className="reg-summary-row"><span>Batting</span><b>{form.batting_style}</b></div>
                 <div className="reg-summary-row"><span>Bowling</span><b>{form.bowling_style}</b></div>
                 <div className="reg-summary-row"><span>Played DPL</span><b>{form.dpl_played ? 'Yes' : 'No'}</b></div>
+                <div className="reg-summary-row"><span>Self rating</span><b>{'★'.repeat(form.self_rating)}{'☆'.repeat(5 - form.self_rating)}</b></div>
                 <div className="reg-summary-row"><span>Availability</span><b>{form.availability}</b></div>
               </div>
             </div>
