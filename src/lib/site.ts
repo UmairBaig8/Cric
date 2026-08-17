@@ -62,3 +62,38 @@ export async function fetchAuctionPlayers(): Promise<AuctionPlayer[]> {
   const { data, error } = await supabase.rpc('auction_players');
   return error ? [] : (data as AuctionPlayer[]);
 }
+
+export type TeamRow = {
+  id: string;
+  name: string;
+  code: string;
+  icon_url: string;
+  theme: string;
+  owner: string | null;
+  captain: string | null;
+  champion: boolean;
+  player_count: number;
+  sort_order: number;
+};
+
+export async function fetchTeamsList(): Promise<TeamRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('teams_list');
+  return error ? [] : (data as TeamRow[]);
+}
+
+export type TeamRosterPlayer = {
+  id: string;
+  name: string;
+  photo_url: string | null;
+  player_type: string;
+  location: string;
+  dpl_played: boolean;
+  role: string;
+};
+
+export async function fetchTeamRoster(teamCode: string): Promise<TeamRosterPlayer[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('team_roster', { team_code: teamCode });
+  return error ? [] : (data as TeamRosterPlayer[]);
+}

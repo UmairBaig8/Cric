@@ -1,47 +1,131 @@
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import SiteHeader from './components/SiteHeader';
 import { useTheme } from './lib/useTheme';
-import { TEAMS, teamPlayers } from './teamData';
+import { fetchTeamsList, fetchTeamRoster, type TeamRow, type TeamRosterPlayer } from './lib/site';
+import { FALLBACK_TEAMS, type TeamInfo } from './teamData';
+
+function teamFromFallback(code: string): TeamInfo | undefined {
+  return FALLBACK_TEAMS.find((t) => t.code === code);
+}
 
 export default function TeamPage() {
   const { dark, toggleTheme } = useTheme();
   const { code } = useParams();
-  const team = TEAMS.find((t) => t.code === code);
+  const [team, setTeam] = useState<TeamRow | null>(null);
+  const [players, setPlayers] = useState<TeamRosterPlayer[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    fetchTeamsList().then((rows) => {
+      if (!alive) return;
+      const found = rows.find((t) => t.code === code);
+      setTeam(found ?? null);
+      if (found) {
+        fetchTeamRoster(code!).then((roster) => {
+          if (alive) setPlayers(roster);
+        });
+      }
+      setLoaded(true);
+    });
+    return () => { alive = false; };
+  }, [code]);
+
+  if (!loaded) return null;
 
   if (!team) {
+    const fb = teamFromFallback(code ?? '');
+    if (!fb) {
+      return (
+        <div className={dark ? 'app dark teams-page' : 'app teams-page'}>
+          <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
+          <main className="teams-main shell">
+            <div className="teams-head">
+              <h1>TEAM <span>NOT FOUND.</span></h1>
+              <Link className="team-back" to="/teams">← ALL TEAMS</Link>
+            </div>
+          </main>
+        </div>
+      );
+    }
     return (
-      <div className={dark ? 'app dark teams-page' : 'app teams-page'}>
-        <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
-        <main className="teams-main shell">
-          <div className="teams-head">
-            <h1>TEAM <span>NOT FOUND.</span></h1>
-            <Link className="team-back" to="/teams">← ALL TEAMS</Link>
-          </div>
-        </main>
-      </div>
+      <TeamDetail
+        dark={dark}
+        toggleTheme={toggleTheme}
+        name={fb.name}
+        code={fb.code}
+        img={fb.img}
+        theme={fb.theme}
+        count={fb.players}
+        owner={fb.owner}
+        captain={fb.captain}
+        champion={fb.champion}
+        players={[]}
+      />
     );
   }
 
-  const players = teamPlayers(team);
-
   return (
-    <div className={`app ${dark ? 'dark ' : ''}teams-page team-detail-page ${team.theme}`}>
+    <TeamDetail
+      dark={dark}
+      toggleTheme={toggleTheme}
+      name={team.name}
+      code={team.code}
+      img={team.icon_url}
+      theme={team.theme}
+      count={team.player_count}
+      owner={team.owner || 'TBD'}
+      captain={team.captain || 'TBD'}
+      champion={team.champion}
+      players={players}
+    />
+  );
+}
+
+function TeamDetail({
+  dark,
+  toggleTheme,
+  name,
+  code,
+  img,
+  theme,
+  count,
+  owner,
+  captain,
+  champion,
+  players,
+}: {
+  dark: boolean;
+  toggleTheme: () => void;
+  name: string;
+  code: string;
+  img: string;
+  theme: string;
+  count: number;
+  owner: string;
+  captain: string;
+  champion: boolean;
+  players: TeamRosterPlayer[];
+}) {
+  return (
+    <div className={`app ${dark ? 'dark ' : ''}teams-page team-detail-page ${theme}`}>
       <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
       <main className="teams-main shell">
         <Link className="team-back" to="/teams">← ALL TEAMS</Link>
         <div className="team-hero">
-          <div className="team-hero-icon"><img src={team.img} alt={team.name} /></div>
+          <div className="team-hero-icon"><img src={img} alt={name} /></div>
           <div className="team-hero-info">
             <div className="eyebrow">
-              {team.code} · D2P 2026{team.champion ? ' · DEFENDING CHAMPIONS' : ''}
+              {code} · D2P 2026{champion ? ' · DEFENDING CHAMPIONS' : ''}
             </div>
-            <h1>{team.name}</h1>
-            <p className="teams-desc">{team.players} players locked in. One goal: lift the DPL 2026 trophy.</p>
+            <h1>{name}</h1>
+            <p className="teams-desc">{count} players locked in. One goal: lift the DPL 2026 trophy.</p>
             <div className="team-leads">
-              <div className="team-lead"><span>OWNER</span><b>{team.owner}</b></div>
-              <div className="team-lead"><span>CAPTAIN</span><b>{team.captain}</b></div>
+              <div className="team-lead"><span>OWNER</span><b>{owner}</b></div>
+              <div className="team-lead"><span>CAPTAIN</span><b>{captain}</b></div>
             </div>
-            {team.champion && (
+            {champion && (
               <span className="team-champion hero">
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M12 2l2.6 6.6 7 .6-5.3 4.6 1.6 6.9L12 17.3l-5.9 3.4 1.6-6.9L2.4 9.2l7-.6z"/></svg>
                 DPL 2025 CHAMPIONS
@@ -51,13 +135,13 @@ export default function TeamPage() {
         </div>
         <section className="player-grid team-player-grid">
           {players.map((p) => (
-            <article className={`player-card ${team.theme}`} key={p.name}>
+            <article className={`player-card ${theme}`} key={p.id}>
               <div className="player-photo"><span>{p.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span></div>
               <h3>{p.name}</h3>
-              <span className="player-role">{p.role}{p.captain ? ' · CAPTAIN' : ''}</span>
+              <span className="player-role">{p.role}{p.role === 'captain' ? ' · CAPTAIN' : ''}</span>
               <div className="team-player-extra">
                 <span className="player-squad">{p.location}</span>
-                <span className={`player-dpl${p.dpl ? '' : ' no'}`}>{p.dpl ? 'DPL VET' : 'ROOKIE'}</span>
+                <span className={`player-dpl${p.dpl_played ? '' : ' no'}`}>{p.dpl_played ? 'DPL VET' : 'ROOKIE'}</span>
               </div>
             </article>
           ))}

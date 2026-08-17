@@ -28,6 +28,7 @@ alter table public.registrations
   alter column location set not null;
 
 -- player_cards: show location instead of squad / jersey.
+drop function if exists public.player_cards(integer);
 create or replace function public.player_cards(limit_count integer default 8)
 returns table (id uuid, name text, photo_url text, player_type text, location text, created_at timestamptz)
 language sql
@@ -44,6 +45,7 @@ revoke all on function public.player_cards(integer) from public;
 grant execute on function public.player_cards(integer) to anon, authenticated;
 
 -- auction_players: show location + DPL status instead of squad / jersey / experience.
+drop function if exists public.auction_players();
 create or replace function public.auction_players()
 returns table (
   id uuid,
