@@ -155,7 +155,7 @@
 .team-champion{position:absolute;top:12px;left:12px;z-index:3;display:inline-flex;align-items:center;gap:5px;font:900 9px/1 "Barlow Condensed";letter-spacing:2px;color:#1a1204;background:linear-gradient(90deg,#ffd75e,#ffb52e);border:1px solid rgba(255,214,110,.6);border-radius:8px;padding:6px 10px;box-shadow:0 6px 18px rgba(255,181,46,.45);text-transform:uppercase}.team-card.champion{outline:2px solid #ffc22e;outline-offset:-2px}.team-card:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(2,8,19,0) 25%,rgba(2,8,19,.91) 100%),radial-gradient(circle at 50% 35%,transparent 20%,rgba(2,8,19,.4) 100%);z-index:1;pointer-events:none}
 .team-meta{position:absolute;z-index:2;left:16px;right:16px;bottom:15px}
 .team-code{font-size:7px;font-weight:900;letter-spacing:.2em;color:var(--accent);margin-bottom:5px}
-.team-name{font:900 25px/.88 'Barlow Condensed';text-transform:uppercase;color:#fff}
+.team-name{font:900 25px/.88 'Barlow Condensed';text-transform:uppercase;color:var(--accent);text-shadow:0 2px 10px rgba(2,8,19,.45)}
 .team-players{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
 .team-count{font-size:8px;font-weight:900;letter-spacing:1px;color:#e6edf3;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:4px 8px}
 .team-view{font-size:7px;font-weight:700;letter-spacing:1.5px;color:#9eb2c4;text-transform:uppercase}
