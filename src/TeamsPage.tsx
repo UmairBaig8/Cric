@@ -9,10 +9,6 @@ export default function TeamsPage() {
     <div className={dark ? 'app dark teams-page' : 'app teams-page'}>
       <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
       <main className="teams-main shell">
-        <div className="teams-head">
-          <h1>MEET THE <span>TEAMS.</span></h1>
-          <p className="teams-desc">Ten teams. Ten identities. One trophy. Meet the squads stepping out of the office and onto the pitch.</p>
-        </div>
         <section className="teams-grid">
           {TEAMS.map(({ name, code, img, theme, players, champion }, i) => (
             <a className={`team-card ${theme}${champion ? ' champion' : ''}`} key={code} href={`/D2P/teams/${code}`}>
