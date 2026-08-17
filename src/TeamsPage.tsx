@@ -2,16 +2,16 @@ import SiteHeader from './components/SiteHeader';
 import { useTheme } from './lib/useTheme';
 
 const TEAMS = [
-  { name: 'Digi Super Kings', code: 'DSK', img: '/D2P/teams/dsk.png', theme: 'kings' },
-  { name: 'Sahadriche Mavale', code: 'SM', img: '/D2P/teams/mavale.png', theme: 'mavale' },
-  { name: 'Digi Mitra Mandal', code: 'DMM', img: '/D2P/teams/mitra.png', theme: 'mitra' },
-  { name: 'Bhakarwadi Blasters', code: 'BB', img: '/D2P/teams/blaster.png', theme: 'blaster' },
-  { name: 'Digi Dhadakebaaz', code: 'DD', img: '/D2P/teams/dhada.png', theme: 'dhada' },
-  { name: 'Cricket Wala', code: 'CW', img: '/D2P/teams/wala.png', theme: 'wala' },
-  { name: 'Digi Titans', code: 'DT', img: '/D2P/teams/titans.png', theme: 'titans' },
-  { name: 'Digi Yodhas', code: 'DY', img: '/D2P/teams/yodhas.png', theme: 'yodhas' },
-  { name: 'Gallit Maramari', code: 'GM', img: '/D2P/teams/gallit.png', theme: 'gallit' },
-  { name: 'Digi Dhurandhars', code: 'DDH', img: '/D2P/teams/dhurandhars.png', theme: 'dhurandhars' },
+  { name: 'Digi Super Kings', code: 'DSK', img: '/D2P/teams/dsk.png', theme: 'kings', players: 12 },
+  { name: 'Sahadriche Mavale', code: 'SM', img: '/D2P/teams/mavale.png', theme: 'mavale', players: 11 },
+  { name: 'Digi Mitra Mandal', code: 'DMM', img: '/D2P/teams/mitra.png', theme: 'mitra', players: 12 },
+  { name: 'Bhakarwadi Blasters', code: 'BB', img: '/D2P/teams/blaster.png', theme: 'blaster', players: 10 },
+  { name: 'Digi Dhadakebaaz', code: 'DD', img: '/D2P/teams/dhada.png', theme: 'dhada', players: 11 },
+  { name: 'Cricket Wala', code: 'CW', img: '/D2P/teams/wala.png', theme: 'wala', players: 12 },
+  { name: 'Digi Titans', code: 'DT', img: '/D2P/teams/titans.png', theme: 'titans', players: 11 },
+  { name: 'Digi Yodhas', code: 'DY', img: '/D2P/teams/yodhas.png', theme: 'yodhas', players: 10 },
+  { name: 'Gallit Maramari', code: 'GM', img: '/D2P/teams/gallit.png', theme: 'gallit', players: 12 },
+  { name: 'Digi Dhurandhars', code: 'DDH', img: '/D2P/teams/dhurandhars.png', theme: 'dhurandhars', players: 11 },
 ] as const;
 
 export default function TeamsPage() {
@@ -27,13 +27,13 @@ export default function TeamsPage() {
           <p className="teams-desc">Ten teams. Ten identities. One trophy. Meet the squads stepping out of the office and onto the pitch.</p>
         </div>
         <section className="teams-grid">
-          {TEAMS.map(({ name, code, img, theme }, i) => (
+          {TEAMS.map(({ name, code, img, theme, players }, i) => (
             <article className={`team-card ${theme}`} key={code}>
               <div className="team-sprite"><img src={img} alt={name} /></div>
               <div className="team-meta">
                 <div className="team-code">{code} · TEAM {String(i + 1).padStart(2, '0')}</div>
                 <div className="team-name">{name}</div>
-                <div className="team-players">08 PLAYERS · VIEW TEAM</div>
+                <div className="team-players"><span className="team-count">{players} PLAYERS</span><span className="team-view">VIEW TEAM</span></div>
                 <div className="team-arrow">↗</div>
               </div>
             </article>
