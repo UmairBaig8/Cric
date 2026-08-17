@@ -3,7 +3,7 @@ import { hasSupabaseConfig } from './env';
 import { fetchRecentPlayers, fetchRegistrationsCount, fetchSiteSettings, fetchTeams, fetchPlayerCards } from './lib/site';
 import type { RecentPlayer, PlayerCard } from './lib/site';
 import { useTheme } from './lib/useTheme';
-import FlameWrap from './components/canvasui/FlameWrap';
+import ElectricBorder from './components/ElectricBorder';
 import SiteHeader from './components/SiteHeader';
 
 const steps = [
@@ -91,7 +91,7 @@ export default function App() {
             <div className="actions"><a className="btn btn-primary" href="/D2P/register">🏏 JOIN DPL 2026 →</a><a className="btn btn-secondary" href="#teams">VIEW TOURNAMENT</a></div>
             <div className="hero-stats"><div className="stat"><b>{totalTeams}</b><small>TEAMS</small></div><div className="stat"><b>{playerCount}</b><small>PLAYERS</small></div><div className="stat"><b>{totalMatches}</b><small>MATCHES</small></div><div className="stat"><b>{championLabel}</b><small>CHAMPION</small></div></div>
           </div>
-          <FlameWrap className="hero-flame" height={170} radius={20} melt={14} scorch={1.5} ember={2.5} distortion={14} smoke={1.5} rim={3} intensity={0.6}><aside className="hero-panel"><div className="panel-label">DPL 2026 / REGISTRATION WINDOW</div><div className="panel-title">Your spot is waiting.</div><div className="countdown"><div className="time"><b>{time(days)}</b><span>DAYS</span></div><div className="time"><b>{time(hours)}</b><span>HRS</span></div><div className="time"><b>{time(mins)}</b><span>MINS</span></div><div className="time"><b>{time(secs)}</b><span>SECS</span></div></div><div className="capacity"><div className="capacity-head"><span>PLAYER CAPACITY</span><strong><span>{playerCount}</span> / {capacity}</strong></div><div className="meter"><i style={{ width: `${meterWidth}%` }} /></div><div className="spots">Only <strong>{spotsLeft} spots</strong> left. Don&apos;t sit this one out.</div></div><a className="btn btn-primary panel-cta" href="/D2P/register">YES, COUNT ME IN →</a></aside></FlameWrap>
+          <ElectricBorder className="hero-flame" color="#ff6e40" speed={1.2} chaos={0.16} borderRadius={20}><aside className="hero-panel"><div className="panel-label">DPL 2026 / REGISTRATION WINDOW</div><div className="panel-title">Your spot is waiting.</div><div className="countdown"><div className="time"><b>{time(days)}</b><span>DAYS</span></div><div className="time"><b>{time(hours)}</b><span>HRS</span></div><div className="time"><b>{time(mins)}</b><span>MINS</span></div><div className="time"><b>{time(secs)}</b><span>SECS</span></div></div><div className="capacity"><div className="capacity-head"><span>PLAYER CAPACITY</span><strong><span>{playerCount}</span> / {capacity}</strong></div><div className="meter"><i style={{ width: `${meterWidth}%` }} /></div><div className="spots">Only <strong>{spotsLeft} spots</strong> left. Don&apos;t sit this one out.</div></div><a className="btn btn-primary panel-cta" href="/D2P/register">YES, COUNT ME IN →</a></aside></ElectricBorder>
         </section>
 
         <section className="ribbon"><div className="shell ribbon-grid">{[['🪑', 'BREAK THE ROUTINE', 'Step out of the chair. Into the game.'], ['🤝', 'TEAM UP', 'Bond beyond projects. Build real teamwork.'], ['🎯', 'COMPETE', 'Challenge rivals. Bring your A-game.'], ['🏆', 'WIN GLORY', 'Lift the trophy. Earn the bragging rights.']].map(([icon, title, copy]) => <div className="ribbon-item" key={title}><div className="ribbon-icon">{icon}</div><div><b>{title}</b><p>{copy}</p></div></div>)}</div></section>
