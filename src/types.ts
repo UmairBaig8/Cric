@@ -37,5 +37,6 @@ export type Team = {
   id: string;
   name: string;
   icon: string;
+  icon_url?: string;
   sort_order: number;
 };

@@ -14,7 +14,7 @@ function PlayerCard({ player }: { player: AuctionPlayer }) {
   return (
     <div className="ac-slide">
       <div className="auction-card-top">
-        <span className="ac-league">D2P <b>2026</b></span>
+        <span className="ac-league">DPL <b>2026</b></span>
         <span className="ac-no">#{player.employee_id}</span>
       </div>
       <div className="ac-photo">

@@ -2,37 +2,21 @@ import { useEffect, useState } from 'react';
 import SiteHeader from './components/SiteHeader';
 import { useTheme } from './lib/useTheme';
 import { fetchTeamsList, type TeamRow } from './lib/site';
-import { FALLBACK_TEAMS } from './teamData';
-
-function toFallback() {
-  return FALLBACK_TEAMS.map((t) => ({
-    id: t.code,
-    name: t.name,
-    code: t.code,
-    icon_url: t.img,
-    theme: t.theme,
-    owner: t.owner,
-    captain: t.captain,
-    champion: t.champion,
-    player_count: t.players,
-    sort_order: 0,
-  }));
-}
 
 export default function TeamsPage() {
   const { dark, toggleTheme } = useTheme();
-  const [teams, setTeams] = useState<TeamRow[] | null>(null);
+  const [teams, setTeams] = useState<TeamRow[]>([]);
 
   useEffect(() => {
     let alive = true;
     fetchTeamsList().then((rows) => {
       if (!alive) return;
-      setTeams(rows.length ? rows : toFallback());
+      setTeams(rows);
     });
     return () => { alive = false; };
   }, []);
 
-  const list = teams ?? toFallback();
+  const list = teams;
 
   return (
     <div className={dark ? 'app dark teams-page' : 'app teams-page'}>
@@ -42,9 +26,8 @@ export default function TeamsPage() {
           {list.map((t, i) => (
             <a className={`team-card ${t.theme}${t.champion ? ' champion' : ''}`} key={t.code} href={`/D2P/teams/${t.code}`}>
               {t.champion && (
-                <span className="team-champion" title="DPL 2025 Champions">
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M12 2l2.6 6.6 7 .6-5.3 4.6 1.6 6.9L12 17.3l-5.9 3.4 1.6-6.9L2.4 9.2l7-.6z"/></svg>
-                  CHAMPIONS
+                <span className="team-champion" title="DPL 2025 Champions" aria-label="DPL 2025 Champions">
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.6 6.6 7 .6-5.3 4.6 1.6 6.9L12 17.3l-5.9 3.4 1.6-6.9L2.4 9.2l7-.6z"/></svg>
                 </span>
               )}
               <div className="team-sprite"><img src={t.icon_url} alt={t.name} /></div>

@@ -52,7 +52,7 @@ export default function App() {
         setTotalMatches(settings.total_matches);
         if (settings.champion) setChampionLabel(settings.champion);
       }
-      if (teamRows.length) setTeams(teamRows.map((team) => `${team.name} ${team.icon}`.trim()));
+      if (teamRows.length) setTeams(teamRows.map((team) => team.name));
       if (typeof count === 'number') setPlayerCount(count);
       if (players.length) setRecentPlayers(players);
       if (cards.length) setPlayerCards(cards);
@@ -85,7 +85,7 @@ export default function App() {
         <section className="hero" id="tournament">
           <div className="hero-art" aria-hidden="true" />
           <div className="shell hero-content">
-            <div className="kicker"><i /> D2P 2026 · REGISTRATION LIVE</div>
+            <div className="kicker"><span className="kicker-live"><i /><b>LIVE</b></span> DPL 2026 · REGISTRATION OPEN</div>
             <div className="social-proof"><div className="avatars">{(recentPlayers.length ? recentPlayers : []).map((player) => player.photo_url ? <img alt={player.name} className="avatar" key={player.id} src={player.photo_url} /> : <i className="avatar" key={player.id} />)}{!recentPlayers.length ? [1, 2, 3, 4, 5].map((avatar) => <i className="avatar" key={avatar} />) : null}</div><strong>{playerCount}+</strong> players already joined</div>
             <h1>DESK TO<br /><span>PITCH.</span></h1>
             <div className="hero-sub">DIGITATE PREMIER LEAGUE · THE OFFICE CRICKET LEAGUE</div>
@@ -93,7 +93,7 @@ export default function App() {
             <div className="actions"><Magnet magnetStrength={3} padding={90}><a className="btn btn-primary" href="/D2P/register">🏏 JOIN DPL 2026 →</a></Magnet></div>
             <div className="hero-stats"><div className="stat"><b>{totalTeams}</b><small>TEAMS</small></div><div className="stat"><b>{playerCount}</b><small>PLAYERS</small></div><div className="stat"><b>{totalMatches}</b><small>MATCHES</small></div><div className="stat"><b>{championLabel}</b><small>CHAMPION</small></div></div>
           </div>
-          <ElectricBorder className="hero-flame" color="#ff6e40" speed={1.2} chaos={0.16} borderRadius={20}><aside className="hero-panel"><div className="panel-label">DPL 2026 / REGISTRATION WINDOW</div><div className="panel-title">Your spot is waiting.</div><div className="countdown"><div className="time"><b>{time(days)}</b><span>DAYS</span></div><div className="time"><b>{time(hours)}</b><span>HRS</span></div><div className="time"><b>{time(mins)}</b><span>MINS</span></div><div className="time"><b>{time(secs)}</b><span>SECS</span></div></div><div className="capacity"><div className="capacity-head"><span>PLAYER CAPACITY</span><strong><span>{playerCount}</span> / {capacity}</strong></div><div className="meter"><i style={{ width: `${meterWidth}%` }} /></div><div className="spots">Only <strong>{spotsLeft} spots</strong> left. Don&apos;t sit this one out.</div></div><Magnet magnetStrength={3} padding={90}><a className="btn btn-primary panel-cta" href="/D2P/register">YES, COUNT ME IN →</a></Magnet></aside></ElectricBorder>
+          <ElectricBorder className="hero-flame" color="#3B82F6" speed={1.4} chaos={0.18} borderRadius={20}><aside className="hero-panel"><div className="panel-label">DPL 2026 / REGISTRATION WINDOW</div><div className="panel-title">Your spot is waiting.</div><div className="countdown"><div className="time"><b>{time(days)}</b><span>DAYS</span></div><div className="time"><b>{time(hours)}</b><span>HRS</span></div><div className="time"><b>{time(mins)}</b><span>MINS</span></div><div className="time"><b>{time(secs)}</b><span>SECS</span></div></div><div className="capacity"><div className="capacity-head"><span>PLAYER CAPACITY</span><strong><span>{playerCount}</span> / {capacity}</strong></div><div className="meter"><i style={{ width: `${meterWidth}%` }} /></div><div className="spots">Only <strong>{spotsLeft} spots</strong> left. Don&apos;t sit this one out.</div></div><Magnet magnetStrength={3} padding={90}><a className="btn btn-primary panel-cta" href="/D2P/register">YES, COUNT ME IN →</a></Magnet></aside></ElectricBorder>
         </section>
 
         <section className="ribbon"><div className="shell ribbon-grid">{[['🪑', 'BREAK THE ROUTINE', 'Step out of the chair. Into the game.'], ['🤝', 'TEAM UP', 'Bond beyond projects. Build real teamwork.'], ['🎯', 'COMPETE', 'Challenge rivals. Bring your A-game.'], ['🏆', 'WIN GLORY', 'Lift the trophy. Earn the bragging rights.']].map(([icon, title, copy], index) => <Reveal className="ribbon-cell" key={title} delay={0.05 * index}><div className="ribbon-item"><div className="ribbon-icon">{icon}</div><div><b>{title}</b><p>{copy}</p></div></div></Reveal>)}</div></section>

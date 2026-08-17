@@ -8,6 +8,7 @@ const navLinks = [
   ['/auction', 'AUCTION'],
   ['/leaderboard', 'LEADERBOARD'],
   ['/gallery', 'GALLERY'],
+  ['/admin', 'ADMIN'],
 ];
 
 type SiteHeaderProps = {

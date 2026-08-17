@@ -97,3 +97,127 @@ export async function fetchTeamRoster(teamCode: string): Promise<TeamRosterPlaye
   const { data, error } = await supabase.rpc('team_roster', { team_code: teamCode });
   return error ? [] : (data as TeamRosterPlayer[]);
 }
+
+// ---------- Admin ----------
+
+export type AdminPlayer = {
+  id: string;
+  name: string;
+  email: string;
+  employee_id: string | null;
+  photo_url: string | null;
+  player_type: string;
+  gender: string;
+  location: string;
+  dpl_played: boolean;
+  created_at: string;
+  team_id: string | null;
+  team_code: string | null;
+  role: string | null;
+};
+
+export async function fetchAdminPlayers(): Promise<AdminPlayer[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_players');
+  return error ? [] : (data as AdminPlayer[]);
+}
+
+export type AdminTeam = {
+  id: string;
+  name: string;
+  icon: string;
+  code: string | null;
+  icon_url: string;
+  theme: string;
+  owner: string | null;
+  captain: string | null;
+  champion: boolean;
+  sort_order: number;
+};
+
+export async function fetchAdminTeams(): Promise<AdminTeam[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_teams');
+  return error ? [] : (data as AdminTeam[]);
+}
+
+export async function isCurrentUserAdmin(): Promise<boolean> {
+  if (!supabase) return false;
+  const { data, error } = await supabase.rpc('is_admin');
+  return !error && data === true;
+}
+
+export async function getCurrentUserEmail(): Promise<string | null> {
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getUser();
+  return data.user?.email ?? null;
+}
+
+export async function signInAdmin(email: string, password: string): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Supabase is not configured.' };
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  return error ? { error: error.message } : {};
+}
+
+export async function signOutAdmin(): Promise<void> {
+  if (!supabase) return;
+  await supabase.auth.signOut();
+}
+
+export async function adminSaveSettings(patch: {
+  registration_open?: string | null;
+  registration_deadline?: string | null;
+  player_capacity?: number;
+  total_teams?: number;
+  total_matches?: number;
+  champion?: string | null;
+}): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Supabase is not configured.' };
+  const { error } = await supabase.from('settings').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', 1);
+  return error ? { error: error.message } : {};
+}
+
+export async function adminUpsertTeam(team: {
+  id?: string;
+  name: string;
+  code: string;
+  icon_url: string;
+  theme: string;
+  owner: string;
+  captain: string;
+  champion: boolean;
+  sort_order: number;
+}): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Supabase is not configured.' };
+  const { error } = team.id
+    ? await supabase.from('teams').update(team).eq('id', team.id)
+    : await supabase.from('teams').insert(team);
+  return error ? { error: error.message } : {};
+}
+
+export async function adminDeleteTeam(id: string): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Supabase is not configured.' };
+  const { error } = await supabase.from('teams').delete().eq('id', id);
+  return error ? { error: error.message } : {};
+}
+
+export async function adminAssignPlayer(playerId: string, teamId: string, role: string): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Supabase is not configured.' };
+  const { error } = await supabase.from('team_players').upsert(
+    { team_id: teamId, player_id: playerId, role },
+    { onConflict: 'team_id,player_id' },
+  );
+  return error ? { error: error.message } : {};
+}
+
+export async function adminRemovePlayerFromTeam(playerId: string): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Supabase is not configured.' };
+  const { error } = await supabase.from('team_players').delete().eq('player_id', playerId);
+  return error ? { error: error.message } : {};
+}
+
+export async function adminUpdatePlayer(playerId: string, patch: { name?: string; location?: string; dpl_played?: boolean; player_type?: string }): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Supabase is not configured.' };
+  const { error } = await supabase.from('registrations').update(patch).eq('id', playerId);
+  return error ? { error: error.message } : {};
+}

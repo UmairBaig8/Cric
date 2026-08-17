@@ -3,11 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import SiteHeader from './components/SiteHeader';
 import { useTheme } from './lib/useTheme';
 import { fetchTeamsList, fetchTeamRoster, type TeamRow, type TeamRosterPlayer } from './lib/site';
-import { FALLBACK_TEAMS, type TeamInfo } from './teamData';
-
-function teamFromFallback(code: string): TeamInfo | undefined {
-  return FALLBACK_TEAMS.find((t) => t.code === code);
-}
 
 export default function TeamPage() {
   const { dark, toggleTheme } = useTheme();
@@ -35,34 +30,16 @@ export default function TeamPage() {
   if (!loaded) return null;
 
   if (!team) {
-    const fb = teamFromFallback(code ?? '');
-    if (!fb) {
-      return (
-        <div className={dark ? 'app dark teams-page' : 'app teams-page'}>
-          <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
-          <main className="teams-main shell">
-            <div className="teams-head">
-              <h1>TEAM <span>NOT FOUND.</span></h1>
-              <Link className="team-back" to="/teams">← ALL TEAMS</Link>
-            </div>
-          </main>
-        </div>
-      );
-    }
     return (
-      <TeamDetail
-        dark={dark}
-        toggleTheme={toggleTheme}
-        name={fb.name}
-        code={fb.code}
-        img={fb.img}
-        theme={fb.theme}
-        count={fb.players}
-        owner={fb.owner}
-        captain={fb.captain}
-        champion={fb.champion}
-        players={[]}
-      />
+      <div className={dark ? 'app dark teams-page' : 'app teams-page'}>
+        <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
+        <main className="teams-main shell">
+          <div className="teams-head">
+            <h1>TEAM <span>NOT FOUND.</span></h1>
+            <Link className="team-back" to="/teams">← ALL TEAMS</Link>
+          </div>
+        </main>
+      </div>
     );
   }
 
@@ -114,10 +91,17 @@ function TeamDetail({
       <main className="teams-main shell">
         <Link className="team-back" to="/teams">← ALL TEAMS</Link>
         <div className="team-hero">
-          <div className="team-hero-icon"><img src={img} alt={name} /></div>
+          <div className="team-hero-icon">
+            <img src={img} alt={name} />
+            {champion && (
+              <span className="team-champion team-champion--hero" title="DPL 2025 Champions" aria-label="DPL 2025 Champions">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.6 6.6 7 .6-5.3 4.6 1.6 6.9L12 17.3l-5.9 3.4 1.6-6.9L2.4 9.2l7-.6z"/></svg>
+              </span>
+            )}
+          </div>
           <div className="team-hero-info">
             <div className="eyebrow">
-              {code} · D2P 2026{champion ? ' · DEFENDING CHAMPIONS' : ''}
+              {code} · DPL 2026{champion ? ' · DEFENDING CHAMPIONS' : ''}
             </div>
             <h1>{name}</h1>
             <p className="teams-desc">{count} players locked in. One goal: lift the DPL 2026 trophy.</p>
@@ -125,12 +109,6 @@ function TeamDetail({
               <div className="team-lead"><span>OWNER</span><b>{owner}</b></div>
               <div className="team-lead"><span>CAPTAIN</span><b>{captain}</b></div>
             </div>
-            {champion && (
-              <span className="team-champion hero">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M12 2l2.6 6.6 7 .6-5.3 4.6 1.6 6.9L12 17.3l-5.9 3.4 1.6-6.9L2.4 9.2l7-.6z"/></svg>
-                DPL 2025 CHAMPIONS
-              </span>
-            )}
           </div>
         </div>
         <section className="player-grid team-player-grid">

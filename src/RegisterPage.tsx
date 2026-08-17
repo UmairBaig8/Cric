@@ -18,7 +18,7 @@ type Errors = Partial<Record<FieldName, string>>;
 type Touched = Partial<Record<FieldName, boolean>>;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const EMP_ID_RE = /^\d{7,8}$/;
+const EMP_ID_RE = /^\d{5,9}$/;
 const PHOTO_MAX_MB = 4;
 const PHOTO_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
@@ -40,7 +40,7 @@ function validateField(field: FieldName, value: string | File | null, empStatus:
     case 'employee_id': {
       const id = String(value ?? '').trim();
       if (!id) return 'Employee ID is required.';
-      if (!EMP_ID_RE.test(id)) return 'Employee ID must be a 7–8 digit number.';
+      if (!EMP_ID_RE.test(id)) return 'Employee ID must be a 5–9 digit number.';
       if (empStatus === 'taken') return 'This employee ID is already registered.';
       if (empStatus === 'checking') return 'Checking employee ID…';
       return '';
@@ -227,10 +227,10 @@ export default function RegisterPage() {
                       autoComplete="off"
                       required
                       inputMode="numeric"
-                      pattern="[0-9]{7,8}"
-                      title="Enter your 7–8 digit employee ID"
-                      maxLength={8}
-                      placeholder="12345678"
+                      pattern="[0-9]{5,9}"
+                      title="Enter your 5–9 digit employee ID"
+                      maxLength={9}
+                      placeholder="123456789"
                       value={form.employee_id}
                       aria-invalid={Boolean(fieldError('employee_id'))}
                       onChange={(event) => setField('employee_id', event.target.value.replace(/[^0-9]/g, ''))}
@@ -359,17 +359,32 @@ export default function RegisterPage() {
 
             <div className="stepper-step-body">
               <label className={['reg-photo reg-player-card', fieldError('photo') ? 'has-error' : '', touched.photo && !fieldError('photo') ? 'is-valid' : ''].filter(Boolean).join(' ')}>
-                <span className="reg-photo-preview">{photoPreview ? <img alt="Preview" src={photoPreview} /> : <i>{initials}</i>}</span>
-                <span className="reg-photo-text">
-                  <small className="reg-player-card-kicker">DPL 2026 · PLAYER CARD</small>
-                  <strong>{form.name.trim() || 'Your player card'}</strong>
-                  <span className="reg-player-card-role">{form.player_type} · {form.location}</span>
-                  <small>{photoPreview ? 'Profile photo ready' : 'Add a clear photo · JPG / PNG / WEBP · up to 4 MB'}</small>
-                  {photoPreview ? <button type="button" className="reg-photo-clear" onClick={() => selectPhoto(null)}>Remove photo</button> : null}
-                </span>
-                <span className="reg-player-card-badge">{photoPreview ? 'READY' : 'OPTIONAL'}</span>
+                <div className="reg-pc-side">
+                  <div className="reg-pc-photo">
+                    {photoPreview ? <img alt="Preview" src={photoPreview} /> : <span className="reg-pc-fallback"><i>{initials}</i></span>}
+                    <span className="reg-pc-grad" />
+                    {!photoPreview ? <span className="reg-pc-hint">📷 ADD PHOTO</span> : null}
+                    <span className="reg-pc-role">{form.player_type}</span>
+                  </div>
+                  <div className="reg-pc-body">
+                    <div className="reg-pc-top">
+                      <span className="reg-pc-league">DPL <b>2026</b></span>
+                      <span className="reg-pc-no">#{form.employee_id.trim() || '—'}</span>
+                    </div>
+                    <strong className="reg-pc-name">{form.name.trim() || 'Your player card'}</strong>
+                    <span className="reg-pc-squad">{form.location} · {form.gender}</span>
+                    <div className="reg-pc-tags">
+                      <span className={form.dpl_played ? 'reg-pc-tag-dpl on' : 'reg-pc-tag-dpl'}>{form.dpl_played ? 'DPL VET' : 'DPL ROOKIE'}</span>
+                    </div>
+                    <div className="reg-pc-styles">
+                      <span>{form.batting_style}</span>
+                      <span>{form.bowling_style}</span>
+                    </div>
+                  </div>
+                </div>
                 <input accept="image/png,image/jpeg,image/webp" type="file" onChange={(event) => selectPhoto(event.target.files?.[0] ?? null)} />
               </label>
+              {photoPreview ? <button type="button" className="reg-photo-clear" onClick={() => selectPhoto(null)}>Remove photo</button> : null}
               {fieldError('photo') ? <small className="reg-error">{fieldError('photo')}</small> : null}
             </div>
 
