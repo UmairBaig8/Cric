@@ -6,7 +6,6 @@ import RegisterPage from './RegisterPage';
 import ConfirmationPage from './ConfirmationPage';
 import AuctionPage from './AuctionPage';
 import ComingSoonPage from './ComingSoonPage';
-import CricketBallCursor from './components/CricketBallCursor';
 import './styles.css';
 
 createRoot(document.getElementById('root')!).render(
@@ -24,7 +23,6 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/gallery" element={<ComingSoonPage eyebrow="DPL 2026 / GALLERY" title="GALLERY" copy="Match photos and moments from the season will be collected here." icon="📸" />} />
         <Route path="/about" element={<ComingSoonPage eyebrow="DPL 2026 / ABOUT" title="ABOUT" copy="Everything about the Digitate Premier League — rules, people, and the story — coming soon." icon="✉" />} />
       </Routes>
-      <CricketBallCursor />
     </BrowserRouter>
   </StrictMode>,
 );
