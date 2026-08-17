@@ -5,6 +5,7 @@ import App from './App';
 import RegisterPage from './RegisterPage';
 import ConfirmationPage from './ConfirmationPage';
 import AuctionPage from './AuctionPage';
+import TeamsPage from './TeamsPage';
 import ComingSoonPage from './ComingSoonPage';
 import './styles.css';
 
@@ -15,7 +16,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/" element={<App />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/confirmation" element={<ConfirmationPage />} />
-        <Route path="/teams" element={<ComingSoonPage eyebrow="DPL 2026 / TEAMS" title="TEAMS" copy="Meet the DPL 2026 teams, captains, and squads after the auction." icon="🏆" />} />
+        <Route path="/teams" element={<TeamsPage />} />
         <Route path="/fixtures" element={<ComingSoonPage eyebrow="DPL 2026 / FIXTURES" title="FIXTURES" copy="The full match schedule with dates, venues, and results will live here." icon="📅" />} />
         <Route path="/auction" element={<AuctionPage />} />
         <Route path="/leaderboard" element={<ComingSoonPage eyebrow="DPL 2026 / LEADERBOARD" title="LEADERBOARD" copy="Player rankings, run scorers, and wicket takers will be tracked here." icon="📊" />} />
