@@ -30,7 +30,8 @@ export async function registerPlayer(input: RegistrationInput, photo?: File) {
   if (!supabase) return { ok: true as const, demo: true as const };
 
   const photoUrl = photo ? await uploadPhoto(photo) : null;
-  const { error } = await supabase.from('registrations').insert({ ...input, photo_url: photoUrl });
+  const payload = { ...input, squad: input.squad.trim() || null, photo_url: photoUrl };
+  const { error } = await supabase.from('registrations').insert(payload);
   if (error) throw new Error(error.message);
   return { ok: true as const, demo: false as const };
 }

@@ -3,7 +3,6 @@ import { registerPlayer, checkEmployeeExists } from './lib/registrations';
 import { sendConfirmationEmail } from './lib/email';
 import { useTheme } from './lib/useTheme';
 import SiteHeader from './components/SiteHeader';
-import Stepper, { Step } from './components/Stepper';
 import type { RegistrationInput } from './types';
 
 const initialForm: RegistrationInput = {
@@ -13,15 +12,16 @@ const initialForm: RegistrationInput = {
 };
 
 type EmpStatus = 'idle' | 'checking' | 'free' | 'taken';
-type Errors = Partial<Record<keyof RegistrationInput | 'photo', string>>;
-type Touched = Partial<Record<keyof RegistrationInput | 'photo', boolean>>;
+type FieldName = keyof RegistrationInput | 'photo';
+type Errors = Partial<Record<FieldName, string>>;
+type Touched = Partial<Record<FieldName, boolean>>;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const EMP_ID_RE = /^\d{7,8}$/;
 const PHOTO_MAX_MB = 4;
 const PHOTO_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
-function validateField(field: keyof RegistrationInput | 'photo', value: string | File | null, empStatus: EmpStatus): string {
+function validateField(field: FieldName, value: string | File | null, empStatus: EmpStatus): string {
   switch (field) {
     case 'name': {
       const name = String(value ?? '').trim();
@@ -78,9 +78,8 @@ export default function RegisterPage() {
   const [form, setForm] = useState<RegistrationInput>(initialForm);
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState('');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [step, setStep] = useState(0);
   const [empStatus, setEmpStatus] = useState<EmpStatus>('idle');
   const [errors, setErrors] = useState<Errors>({});
   const [touched, setTouched] = useState<Touched>({});
@@ -108,13 +107,13 @@ export default function RegisterPage() {
     };
   }, [form.employee_id]);
 
-  function fieldValue(field: keyof RegistrationInput | 'photo'): string | File | null {
+  function fieldValue(field: FieldName): string | File | null {
     if (field === 'photo') return photo;
     const value = form[field as keyof RegistrationInput];
     return typeof value === 'string' ? value : String(value ?? '');
   }
 
-  function fieldError(field: keyof RegistrationInput | 'photo'): string {
+  function fieldError(field: FieldName): string {
     if (!touched[field]) return '';
     if (field === 'employee_id' && errors.employee_id && errors.employee_id === 'Checking employee ID…') return '';
     return errors[field] ?? '';
@@ -122,43 +121,19 @@ export default function RegisterPage() {
 
   function setField(field: keyof RegistrationInput, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
-    const err = validateField(field, value, empStatus);
-    setErrors((prev) => ({ ...prev, [field]: err }));
+    setErrors((prev) => ({ ...prev, [field]: validateField(field, value, empStatus) }));
   }
 
-  function blurField(field: keyof RegistrationInput | 'photo') {
+  function blurField(field: FieldName) {
     setTouched((prev) => ({ ...prev, [field]: true }));
-    const err = validateField(field, fieldValue(field), empStatus);
-    setErrors((prev) => ({ ...prev, [field]: err }));
+    setErrors((prev) => ({ ...prev, [field]: validateField(field, fieldValue(field), empStatus) }));
   }
 
-  function validateStep(stepIndex: number): Errors {
-    const map: Array<Array<keyof RegistrationInput | 'photo'>> = [
-      ['employee_id', 'squad', 'name', 'email', 'gender'],
-      ['player_type', 'batting_style', 'bowling_style', 'bowling_arm', 'cricket_experience', 'jersey_size', 'availability'],
-      ['photo'],
-      [],
-    ];
-    const fields = map[stepIndex] ?? [];
+  function allErrors(): Errors {
+    const fields: FieldName[] = ['employee_id', 'squad', 'name', 'email', 'gender', 'player_type', 'batting_style', 'bowling_style', 'bowling_arm', 'cricket_experience', 'jersey_size', 'availability', 'photo'];
     const next: Errors = {};
-    for (const field of fields) {
-      next[field] = validateField(field, fieldValue(field), empStatus);
-    }
+    for (const field of fields) next[field] = validateField(field, fieldValue(field), empStatus);
     return next;
-  }
-
-  function isStepValid(stepIndex: number): boolean {
-    const next = validateStep(stepIndex);
-    return Object.values(next).every((err) => !err);
-  }
-
-  function stepValid() {
-    return isStepValid(step);
-  }
-
-  function handleStepChange(nextStep: number) {
-    setStep(nextStep);
-    setMessage('');
   }
 
   function selectPhoto(file: File | null) {
@@ -175,35 +150,24 @@ export default function RegisterPage() {
     setErrors((prev) => ({ ...prev, photo: '' }));
   }
 
-  function canNavigateTo(target: number): boolean {
-    if (target <= step) return true;
-    if (target === step + 1) return isStepValid(step);
-    for (let i = step; i < target; i++) {
-      if (!isStepValid(i)) return false;
-    }
-    return true;
-  }
-
   async function submit(event?: FormEvent<HTMLFormElement>) {
     if (event) event.preventDefault();
     setTouched({ employee_id: true, name: true, email: true });
-    const allErrors: Errors = {};
-    const allFields: Array<keyof RegistrationInput | 'photo'> = ['employee_id', 'squad', 'name', 'email', 'gender', 'player_type', 'batting_style', 'bowling_style', 'bowling_arm', 'cricket_experience', 'jersey_size', 'availability', 'photo'];
-    for (const field of allFields) {
-      allErrors[field] = validateField(field, fieldValue(field), empStatus);
-    }
-    setErrors(allErrors);
-    if (Object.values(allErrors).some((err) => err)) {
-      setMessage('Please fix the highlighted fields below before submitting.');
+    const nextErrors = allErrors();
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some((err) => err)) {
+      setMessage({ kind: 'error', text: 'Please fix the highlighted fields below before submitting.' });
+      const firstInvalid = document.querySelector<HTMLElement>('.reg-field.has-error input, .reg-field.has-error select');
+      firstInvalid?.focus();
       return;
     }
     setSubmitting(true);
-    setMessage('');
+    setMessage(null);
     try {
       const trimmed = { ...form, name: form.name.trim(), email: form.email.trim().toLowerCase(), employee_id: form.employee_id.trim(), squad: form.squad.trim() };
       const result = await registerPlayer(trimmed, photo ?? undefined);
       if (result.demo) {
-        setMessage('Demo registration saved locally. Connect Supabase to go live.');
+        setMessage({ kind: 'success', text: 'Demo registration saved locally. Connect Supabase to go live.' });
       } else {
         void sendConfirmationEmail(trimmed.name, trimmed.email);
         window.location.href = `/D2P/confirmation?name=${encodeURIComponent(trimmed.name)}&email=${encodeURIComponent(trimmed.email)}`;
@@ -213,10 +177,12 @@ export default function RegisterPage() {
       setPhotoPreview('');
     } catch (error) {
       const raw = error instanceof Error ? error.message : String(error);
-      if (raw.toLowerCase().includes('duplicate') || raw.toLowerCase().includes('unique constraint')) {
-        setMessage("Looks like you've already registered with this employee ID. You're all set — see you on the pitch!");
+      if (/duplicate|unique constraint|already exists/i.test(raw)) {
+        setMessage({ kind: 'error', text: "Looks like you've already registered with this employee ID. You're all set — see you on the pitch!" });
+      } else if (/check constraint|department|squad/i.test(raw)) {
+        setMessage({ kind: 'error', text: 'Something looks off in a couple of fields. Please double-check your Squad and try again.' });
       } else {
-        setMessage(error instanceof Error ? error.message : 'Registration failed. Try again.');
+        setMessage({ kind: 'error', text: 'We could not save your profile right now. Please try again in a moment.' });
       }
     } finally {
       setSubmitting(false);
@@ -225,68 +191,77 @@ export default function RegisterPage() {
 
   const initials = form.name.trim().split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase() || 'YOU';
 
+  const empHint = empStatus === 'checking' ? <em className="reg-hint checking">Checking…</em>
+    : empStatus === 'free' && EMP_ID_RE.test(form.employee_id.trim()) ? <em className="reg-hint ok">✓ Available</em>
+    : empStatus === 'taken' ? <em className="reg-hint warn">✓ Already registered</em>
+    : null;
+
+  const fieldProps = (field: FieldName) => ({
+    className: `reg-field${fieldError(field) ? ' has-error' : ''}${touched[field] && !fieldError(field) ? ' is-valid' : ''}`,
+    'data-error': fieldError(field),
+  });
+
   return (
     <div className={dark ? 'app dark register-page' : 'app register-page'}>
       <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
       <main className="register-main shell">
         <form className="registration-form registration-card" onSubmit={submit} noValidate>
-          <div className="form-card-heading">
-            <span>{String(step + 1).padStart(2, '0')}</span>
-            <div><h2>JOIN D2P 2026.</h2><p>Build your player profile.</p></div>
-            <em>~ 2 MIN</em>
+          <div className="reg-top">
+            <div className="reg-title">
+              <span className="reg-eyebrow">DPL 2026 · PLAYER REGISTRATION</span>
+              <h2>JOIN THE LEAGUE.</h2>
+              <p>Register once — get picked in the auction, wear your jersey, play for the trophy.</p>
+            </div>
+            <span className="reg-time">~ 2 MIN</span>
           </div>
-          <Stepper
-            initialStep={1}
-            onStepChange={(value) => handleStepChange(value - 1)}
-            onFinalStepCompleted={() => submit()}
-            backButtonText="← BACK"
-            nextButtonText="NEXT →"
-            completeButtonText={submitting ? 'SAVING…' : '🏏 CREATE MY PLAYER PROFILE'}
-            backButtonProps={{ className: 'btn btn-ghost' }}
-            nextButtonProps={{ className: 'btn btn-primary', disabled: !stepValid() || submitting }}
-            isStepAllowed={(target) => canNavigateTo(target)}
-          >
-            <Step>
-              <fieldset>
-                <legend>ABOUT YOU</legend>
-                <div className="form-grid form-grid-2">
-                  <label className={fieldError('employee_id') ? 'has-error' : ''}>
-                    <span className="field-label">Employee ID <em className="req-star">*</em></span>
-                    <input
-                      autoComplete="off"
-                      required
-                      inputMode="numeric"
-                      pattern="[0-9]{7,8}"
-                      title="Enter your 7–8 digit employee ID"
-                      maxLength={8}
-                      placeholder="e.g. 12345678"
-                      value={form.employee_id}
-                      aria-invalid={Boolean(fieldError('employee_id'))}
-                      onChange={(event) => setField('employee_id', event.target.value.replace(/[^0-9]/g, ''))}
-                      onBlur={() => blurField('employee_id')}
-                    />
-                    {empStatus === 'checking' && !touched.employee_id ? <em className="emp-hint checking">Checking…</em> : null}
-                    {empStatus === 'free' && EMP_ID_RE.test(form.employee_id.trim()) ? <em className="emp-hint free">✓ This ID is available.</em> : null}
-                    {empStatus === 'taken' ? <em className="emp-hint taken">✓ Already done — this ID is registered.</em> : null}
-                    {fieldError('employee_id') ? <em className="field-error">{fieldError('employee_id')}</em> : null}
-                  </label>
-                  <label className={fieldError('squad') ? 'has-error' : ''}>
-                    <span className="field-label">Squad</span>
-                    <input
-                      autoComplete="organization"
-                      minLength={2}
-                      placeholder="e.g. Engineering, Design"
-                      value={form.squad}
-                      aria-invalid={Boolean(fieldError('squad'))}
-                      onChange={(event) => setField('squad', event.target.value)}
-                      onBlur={() => blurField('squad')}
-                    />
-                    {fieldError('squad') ? <em className="field-error">{fieldError('squad')}</em> : null}
-                  </label>
-                </div>
-                <label className={fieldError('name') ? 'has-error' : ''}>
-                  <span className="field-label">Full name <em className="req-star">*</em></span>
+
+          <section className="reg-section">
+            <h3 className="reg-section-title"><span>01</span> Personal details</h3>
+            <div className="reg-fields">
+              <div {...fieldProps('employee_id')}>
+                <label htmlFor="employee_id">Employee ID <em className="req-star">*</em></label>
+                <div className="reg-input-wrap">
                   <input
+                    id="employee_id"
+                    autoComplete="off"
+                    required
+                    inputMode="numeric"
+                    pattern="[0-9]{7,8}"
+                    title="Enter your 7–8 digit employee ID"
+                    maxLength={8}
+                    placeholder="12345678"
+                    value={form.employee_id}
+                    aria-invalid={Boolean(fieldError('employee_id'))}
+                    onChange={(event) => setField('employee_id', event.target.value.replace(/[^0-9]/g, ''))}
+                    onBlur={() => blurField('employee_id')}
+                  />
+                  {empHint}
+                </div>
+                {fieldError('employee_id') ? <small className="reg-error">{fieldError('employee_id')}</small> : null}
+              </div>
+
+              <div {...fieldProps('squad')}>
+                <label htmlFor="squad">Squad <em className="reg-opt">(optional)</em></label>
+                <div className="reg-input-wrap">
+                  <input
+                    id="squad"
+                    autoComplete="organization"
+                    minLength={2}
+                    placeholder="Engineering, Design, Sales…"
+                    value={form.squad}
+                    aria-invalid={Boolean(fieldError('squad'))}
+                    onChange={(event) => setField('squad', event.target.value)}
+                    onBlur={() => blurField('squad')}
+                  />
+                </div>
+                {fieldError('squad') ? <small className="reg-error">{fieldError('squad')}</small> : null}
+              </div>
+
+              <div {...fieldProps('name')}>
+                <label htmlFor="name">Full name <em className="req-star">*</em></label>
+                <div className="reg-input-wrap">
+                  <input
+                    id="name"
                     autoComplete="name"
                     required
                     minLength={2}
@@ -296,112 +271,102 @@ export default function RegisterPage() {
                     onChange={(event) => setField('name', event.target.value)}
                     onBlur={() => blurField('name')}
                   />
-                  {fieldError('name') ? <em className="field-error">{fieldError('name')}</em> : null}
-                </label>
-                <label className={fieldError('email') ? 'has-error' : ''}>
-                  <span className="field-label">Work email <em className="req-star">*</em></span>
+                </div>
+                {fieldError('name') ? <small className="reg-error">{fieldError('name')}</small> : null}
+              </div>
+
+              <div {...fieldProps('email')}>
+                <label htmlFor="email">Work email <em className="req-star">*</em></label>
+                <div className="reg-input-wrap">
                   <input
+                    id="email"
                     autoComplete="email"
                     required
                     type="email"
-                    placeholder="e.g. you@company.com"
+                    placeholder="you@company.com"
                     value={form.email}
                     aria-invalid={Boolean(fieldError('email'))}
                     onChange={(event) => setField('email', event.target.value)}
                     onBlur={() => blurField('email')}
                   />
-                  {fieldError('email') ? <em className="field-error">{fieldError('email')}</em> : null}
-                </label>
-                <div className="gender-field">
-                  <span className="field-label">Gender <em className="req-star">*</em></span>
-                  <div className="gender-picker" role="group" aria-label="Gender">
-                    {(['Male', 'Female'] as const).map((option) => (
-                      <button
-                        type="button"
-                        className={form.gender === option ? 'on' : ''}
-                        key={option}
-                        onClick={() => {
-                          setForm((prev) => ({ ...prev, gender: option }));
-                          setErrors((prev) => ({ ...prev, gender: '' }));
-                        }}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
                 </div>
-              </fieldset>
-            </Step>
-            <Step>
-              <fieldset>
-                <legend>YOUR GAME</legend>
-                <div className="form-grid">
-                  <label className={fieldError('player_type') ? 'has-error' : ''}>
-                    <span className="field-label">Player type</span>
-                    <select required value={form.player_type} aria-invalid={Boolean(fieldError('player_type'))} onChange={(event) => setField('player_type', event.target.value)} onBlur={() => blurField('player_type')}><option>Batter</option><option>Bowler</option><option>All-rounder</option><option>Wicketkeeper-batter</option></select>
-                  </label>
-                  <label className={fieldError('batting_style') ? 'has-error' : ''}>
-                    <span className="field-label">Batting style</span>
-                    <select required value={form.batting_style} aria-invalid={Boolean(fieldError('batting_style'))} onChange={(event) => setField('batting_style', event.target.value)} onBlur={() => blurField('batting_style')}><option>Right-hand batter</option><option>Left-hand batter</option></select>
-                  </label>
-                  <label className={fieldError('bowling_style') ? 'has-error' : ''}>
-                    <span className="field-label">Bowling style</span>
-                    <select required value={form.bowling_style} aria-invalid={Boolean(fieldError('bowling_style'))} onChange={(event) => setField('bowling_style', event.target.value)} onBlur={() => blurField('bowling_style')}><option>Do not bowl</option><option>Right-arm pace</option><option>Left-arm pace</option><option>Right-arm spin</option><option>Left-arm spin</option></select>
-                  </label>
-                  <label className={fieldError('bowling_arm') ? 'has-error' : ''}>
-                    <span className="field-label">Bowling arm</span>
-                    <select required value={form.bowling_arm} aria-invalid={Boolean(fieldError('bowling_arm'))} onChange={(event) => setField('bowling_arm', event.target.value)} onBlur={() => blurField('bowling_arm')}><option>Not applicable</option><option>Right arm</option><option>Left arm</option></select>
-                  </label>
-                  <label className={fieldError('cricket_experience') ? 'has-error' : ''}>
-                    <span className="field-label">Experience</span>
-                    <select required value={form.cricket_experience} aria-invalid={Boolean(fieldError('cricket_experience'))} onChange={(event) => setField('cricket_experience', event.target.value)} onBlur={() => blurField('cricket_experience')}><option>New to cricket</option><option>Casual player</option><option>Club / college player</option><option>Experienced league player</option></select>
-                  </label>
-                  <label className={fieldError('jersey_size') ? 'has-error' : ''}>
-                    <span className="field-label">Jersey size</span>
-                    <select required value={form.jersey_size} aria-invalid={Boolean(fieldError('jersey_size'))} onChange={(event) => setField('jersey_size', event.target.value)} onBlur={() => blurField('jersey_size')}><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
-                  </label>
-                  <label className={fieldError('availability') ? 'has-error' : ''}>
-                    <span className="field-label">Match availability</span>
-                    <select required value={form.availability} aria-invalid={Boolean(fieldError('availability'))} onChange={(event) => setField('availability', event.target.value)} onBlur={() => blurField('availability')}><option>Available for all matches</option><option>Available for most matches</option><option>Need schedule confirmation</option></select>
-                  </label>
+                {fieldError('email') ? <small className="reg-error">{fieldError('email')}</small> : null}
+              </div>
+
+              <div className="reg-field reg-gender">
+                <span className="reg-label">Gender <em className="req-star">*</em></span>
+                <div className="reg-gender-picker" role="group" aria-label="Gender">
+                  {(['Male', 'Female'] as const).map((option) => (
+                    <button
+                      type="button"
+                      className={form.gender === option ? 'on' : ''}
+                      key={option}
+                      onClick={() => {
+                        setForm((prev) => ({ ...prev, gender: option }));
+                        setErrors((prev) => ({ ...prev, gender: '' }));
+                      }}
+                    >
+                      {option}
+                    </button>
+                  ))}
                 </div>
-              </fieldset>
-            </Step>
-            <Step>
-              <fieldset>
-                <legend>YOUR FACE</legend>
-                <label className="photo-field selfie-field">
-                  <small>Take your shot. We&apos;ll do the rest.</small>
-                  <span className="selfie-upload">
-                    <span className="selfie-preview">{photoPreview ? <img alt="Preview" src={photoPreview} /> : <i>📷</i>}</span>
-                    <input accept="image/png,image/jpeg,image/webp" type="file" onChange={(event) => selectPhoto(event.target.files?.[0] ?? null)} />
-                  </span>
-                  <span className="selfie-note">jpg / png / webp · max 4 MB{photoPreview ? <button className="photo-clear" type="button" onClick={() => selectPhoto(null)}>Remove</button> : null}</span>
-                  {fieldError('photo') ? <em className="field-error photo-error">{fieldError('photo')}</em> : null}
-                </label>
-              </fieldset>
-            </Step>
-            <Step>
-              <fieldset>
-                <legend>CONFIRM</legend>
-                <div className="confirm-card">
-                  <div className="confirm-card-head"><span>D2P 2026 · PLAYER CARD</span><span># {form.employee_id.trim() || '—'}</span></div>
-                  <div className="confirm-photo">{photoPreview ? <img alt="Your photo" src={photoPreview} /> : <i>{initials}</i>}</div>
-                  <strong>{form.name.trim() || 'YOUR NAME'}</strong>
-                  <em>{form.player_type} · {form.batting_style} · {form.bowling_style}</em>
-                  <div className="confirm-lines">
-                    <span><b>SQUAD</b>{form.squad.trim() || '—'}</span>
-                    <span><b>EXPERIENCE</b>{form.cricket_experience}</span>
-                    <span><b>JERSEY</b>{form.jersey_size}</span>
-                    <span><b>AVAILABILITY</b>{form.availability}</span>
-                  </div>
-                  <small className="confirm-cta">Looks good? Lock it in. 🏏</small>
-                </div>
-              </fieldset>
-            </Step>
-          </Stepper>
-          {message && <p className={`form-message${message.toLowerCase().includes('fix') ? ' error' : ''}`} role="status">{message}</p>}
-          <small className="privacy-note">Your details are used for DPL registration and team selection only.</small>
+              </div>
+            </div>
+          </section>
+
+          <section className="reg-section">
+            <h3 className="reg-section-title"><span>02</span> Cricket profile</h3>
+            <div className="reg-fields reg-fields-3">
+              <div {...fieldProps('player_type')}>
+                <label htmlFor="player_type">Player type</label>
+                <select id="player_type" required value={form.player_type} aria-invalid={Boolean(fieldError('player_type'))} onChange={(event) => setField('player_type', event.target.value)} onBlur={() => blurField('player_type')}><option>Batter</option><option>Bowler</option><option>All-rounder</option><option>Wicketkeeper-batter</option></select>
+              </div>
+              <div {...fieldProps('batting_style')}>
+                <label htmlFor="batting_style">Batting style</label>
+                <select id="batting_style" required value={form.batting_style} aria-invalid={Boolean(fieldError('batting_style'))} onChange={(event) => setField('batting_style', event.target.value)} onBlur={() => blurField('batting_style')}><option>Right-hand batter</option><option>Left-hand batter</option></select>
+              </div>
+              <div {...fieldProps('bowling_style')}>
+                <label htmlFor="bowling_style">Bowling style</label>
+                <select id="bowling_style" required value={form.bowling_style} aria-invalid={Boolean(fieldError('bowling_style'))} onChange={(event) => setField('bowling_style', event.target.value)} onBlur={() => blurField('bowling_style')}><option>Do not bowl</option><option>Right-arm pace</option><option>Left-arm pace</option><option>Right-arm spin</option><option>Left-arm spin</option></select>
+              </div>
+              <div {...fieldProps('bowling_arm')}>
+                <label htmlFor="bowling_arm">Bowling arm</label>
+                <select id="bowling_arm" required value={form.bowling_arm} aria-invalid={Boolean(fieldError('bowling_arm'))} onChange={(event) => setField('bowling_arm', event.target.value)} onBlur={() => blurField('bowling_arm')}><option>Not applicable</option><option>Right arm</option><option>Left arm</option></select>
+              </div>
+              <div {...fieldProps('cricket_experience')}>
+                <label htmlFor="cricket_experience">Experience</label>
+                <select id="cricket_experience" required value={form.cricket_experience} aria-invalid={Boolean(fieldError('cricket_experience'))} onChange={(event) => setField('cricket_experience', event.target.value)} onBlur={() => blurField('cricket_experience')}><option>New to cricket</option><option>Casual player</option><option>Club / college player</option><option>Experienced league player</option></select>
+              </div>
+              <div {...fieldProps('jersey_size')}>
+                <label htmlFor="jersey_size">Jersey size</label>
+                <select id="jersey_size" required value={form.jersey_size} aria-invalid={Boolean(fieldError('jersey_size'))} onChange={(event) => setField('jersey_size', event.target.value)} onBlur={() => blurField('jersey_size')}><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
+              </div>
+              <div {...fieldProps('availability')}>
+                <label htmlFor="availability">Match availability</label>
+                <select id="availability" required value={form.availability} aria-invalid={Boolean(fieldError('availability'))} onChange={(event) => setField('availability', event.target.value)} onBlur={() => blurField('availability')}><option>Available for all matches</option><option>Available for most matches</option><option>Need schedule confirmation</option></select>
+              </div>
+            </div>
+          </section>
+
+          <section className="reg-section">
+            <h3 className="reg-section-title"><span>03</span> Your photo <em className="reg-opt">(optional)</em></h3>
+            <label className={['reg-photo', fieldError('photo') ? 'has-error' : '', touched.photo && !fieldError('photo') ? 'is-valid' : ''].filter(Boolean).join(' ')}>
+              <span className="reg-photo-preview">{photoPreview ? <img alt="Preview" src={photoPreview} /> : <i>{initials}</i>}</span>
+              <span className="reg-photo-text">
+                <strong>{photoPreview ? 'Looking sharp!' : 'Add a selfie'}</strong>
+                <small>jpg / png / webp · up to 4 MB{photoPreview ? <button type="button" className="reg-photo-clear" onClick={() => selectPhoto(null)}>Remove</button> : null}</small>
+              </span>
+              <input accept="image/png,image/jpeg,image/webp" type="file" onChange={(event) => selectPhoto(event.target.files?.[0] ?? null)} />
+            </label>
+            {fieldError('photo') ? <small className="reg-error">{fieldError('photo')}</small> : null}
+          </section>
+
+          {message ? <p className={`reg-message ${message.kind}`} role="status">{message.text}</p> : null}
+
+          <button className="reg-submit btn btn-primary" type="submit" disabled={submitting}>
+            {submitting ? 'SAVING…' : '🏏 CREATE MY PLAYER PROFILE'}
+          </button>
+          <small className="reg-note">Your details are used for DPL 2026 registration and team selection only.</small>
         </form>
       </main>
       <footer>DPL 2026 · DIGITATE PREMIER LEAGUE · OFFICE CRICKET</footer>
