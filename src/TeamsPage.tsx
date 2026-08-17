@@ -1,18 +1,6 @@
 import SiteHeader from './components/SiteHeader';
 import { useTheme } from './lib/useTheme';
-
-const TEAMS = [
-  { name: 'Digi Super Kings', code: 'DSK', img: '/D2P/teams/dsk.png', theme: 'kings', players: 12, champion: false },
-  { name: 'Sahadriche Mavale', code: 'SM', img: '/D2P/teams/mavale.png', theme: 'mavale', players: 11, champion: false },
-  { name: 'Digi Mitra Mandal', code: 'DMM', img: '/D2P/teams/mitra.png', theme: 'mitra', players: 12, champion: false },
-  { name: 'Bhakarwadi Blasters', code: 'BB', img: '/D2P/teams/blaster.png', theme: 'blaster', players: 10, champion: false },
-  { name: 'Digi Dhadakebaaz', code: 'DD', img: '/D2P/teams/dhada.png', theme: 'dhada', players: 11, champion: false },
-  { name: 'Cricket Wala', code: 'CW', img: '/D2P/teams/wala.png', theme: 'wala', players: 12, champion: false },
-  { name: 'Digi Titans', code: 'DT', img: '/D2P/teams/titans.png', theme: 'titans', players: 11, champion: false },
-  { name: 'Digi Yodhas', code: 'DY', img: '/D2P/teams/yodhas.png', theme: 'yodhas', players: 10, champion: false },
-  { name: 'Gallit Maramari', code: 'GM', img: '/D2P/teams/gallit.png', theme: 'gallit', players: 12, champion: true },
-  { name: 'Digi Dhurandhars', code: 'DDH', img: '/D2P/teams/dhurandhars.png', theme: 'dhurandhars', players: 11, champion: false },
-] as const;
+import { TEAMS } from './teamData';
 
 export default function TeamsPage() {
   const { dark, toggleTheme } = useTheme();
@@ -28,8 +16,13 @@ export default function TeamsPage() {
         </div>
         <section className="teams-grid">
           {TEAMS.map(({ name, code, img, theme, players, champion }, i) => (
-            <article className={`team-card ${theme}${champion ? ' champion' : ''}`} key={code}>
-              {champion && <div className="team-champion">★ CHAMPION</div>}
+            <a className={`team-card ${theme}${champion ? ' champion' : ''}`} key={code} href={`/D2P/teams/${code}`}>
+              {champion && (
+                <span className="team-champion" title="DPL 2025 Champions">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M12 2l2.6 6.6 7 .6-5.3 4.6 1.6 6.9L12 17.3l-5.9 3.4 1.6-6.9L2.4 9.2l7-.6z"/></svg>
+                  CHAMPIONS
+                </span>
+              )}
               <div className="team-sprite"><img src={img} alt={name} /></div>
               <div className="team-meta">
                 <div className="team-code">{code} · TEAM {String(i + 1).padStart(2, '0')}</div>
@@ -37,7 +30,7 @@ export default function TeamsPage() {
                 <div className="team-players"><span className="team-count">{players} PLAYERS</span><span className="team-view">VIEW TEAM</span></div>
                 <div className="team-arrow">↗</div>
               </div>
-            </article>
+            </a>
           ))}
         </section>
       </main>
