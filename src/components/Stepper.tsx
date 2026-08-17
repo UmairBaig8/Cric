@@ -16,6 +16,7 @@ interface StepperProps extends HTMLAttributes<HTMLDivElement> {
   nextButtonText?: string;
   completeButtonText?: string;
   disableStepIndicators?: boolean;
+  isStepAllowed?: (step: number) => boolean;
 }
 
 export default function Stepper({
@@ -33,6 +34,7 @@ export default function Stepper({
   nextButtonText = 'Continue',
   completeButtonText = 'Complete',
   disableStepIndicators = false,
+  isStepAllowed,
   ...rest
 }: StepperProps) {
   const [currentStep, setCurrentStep] = useState<number>(initialStep);
@@ -83,6 +85,7 @@ export default function Stepper({
                   step={stepNumber}
                   disableStepIndicators={disableStepIndicators}
                   currentStep={currentStep}
+                  allowed={isStepAllowed ? isStepAllowed(stepNumber) : true}
                   onClickStep={(clicked) => {
                     setDirection(clicked > currentStep ? 1 : -1);
                     updateStep(clicked);
@@ -210,19 +213,28 @@ interface StepIndicatorProps {
   currentStep: number;
   onClickStep: (step: number) => void;
   disableStepIndicators?: boolean;
+  allowed?: boolean;
 }
 
-function StepIndicator({ step, currentStep, onClickStep, disableStepIndicators }: StepIndicatorProps) {
+function StepIndicator({ step, currentStep, onClickStep, disableStepIndicators, allowed = true }: StepIndicatorProps) {
   const status = currentStep === step ? 'active' : currentStep < step ? 'inactive' : 'complete';
+  const blocked = !allowed && step > currentStep;
 
   const handleClick = () => {
-    if (step !== currentStep && !disableStepIndicators) {
+    if (step !== currentStep && !disableStepIndicators && allowed) {
       onClickStep(step);
     }
   };
 
   return (
-    <motion.div onClick={handleClick} className="step-indicator" style={disableStepIndicators ? { pointerEvents: 'none', opacity: 0.5 } : {}} animate={status} initial={false}>
+    <motion.div
+      onClick={handleClick}
+      className={`step-indicator${blocked ? ' blocked' : ''}`}
+      style={disableStepIndicators || blocked ? { pointerEvents: 'none', opacity: blocked ? 0.45 : 0.5 } : {}}
+      title={blocked ? 'Complete the current step first' : undefined}
+      animate={status}
+      initial={false}
+    >
       <motion.div
         variants={{
           inactive: { scale: 1, backgroundColor: '#222', color: '#a3a3a3' },

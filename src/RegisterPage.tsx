@@ -12,6 +12,67 @@ const initialForm: RegistrationInput = {
   jersey_size: 'M', availability: 'Available for all matches',
 };
 
+type EmpStatus = 'idle' | 'checking' | 'free' | 'taken';
+type Errors = Partial<Record<keyof RegistrationInput | 'photo', string>>;
+type Touched = Partial<Record<keyof RegistrationInput | 'photo', boolean>>;
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const EMP_ID_RE = /^\d{7,8}$/;
+const PHOTO_MAX_MB = 4;
+const PHOTO_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+
+function validateField(field: keyof RegistrationInput | 'photo', value: string | File | null, empStatus: EmpStatus): string {
+  switch (field) {
+    case 'name': {
+      const name = String(value ?? '').trim();
+      if (!name) return 'Full name is required.';
+      if (name.length < 2) return 'Name must be at least 2 characters.';
+      if (!/^[a-zA-Z\u00C0-\u024F][a-zA-Z\u00C0-\u024F\s.'-]*$/.test(name)) return 'Name can only contain letters, spaces, dots and hyphens.';
+      return '';
+    }
+    case 'email': {
+      const email = String(value ?? '').trim();
+      if (!email) return 'Work email is required.';
+      if (!EMAIL_RE.test(email)) return 'Enter a valid email address (e.g. you@company.com).';
+      return '';
+    }
+    case 'employee_id': {
+      const id = String(value ?? '').trim();
+      if (!id) return 'Employee ID is required.';
+      if (!EMP_ID_RE.test(id)) return 'Employee ID must be a 7–8 digit number.';
+      if (empStatus === 'taken') return 'This employee ID is already registered.';
+      if (empStatus === 'checking') return 'Checking employee ID…';
+      return '';
+    }
+    case 'squad': {
+      const squad = String(value ?? '').trim();
+      if (squad && squad.length < 2) return 'Squad must be at least 2 characters.';
+      return '';
+    }
+    case 'gender':
+      if (!value) return 'Select your gender.';
+      return '';
+    case 'player_type':
+    case 'batting_style':
+    case 'bowling_style':
+    case 'bowling_arm':
+    case 'cricket_experience':
+    case 'jersey_size':
+    case 'availability':
+      if (!value) return 'Select an option.';
+      return '';
+    case 'photo': {
+      if (!value) return '';
+      const file = value as File;
+      if (!PHOTO_TYPES.includes(file.type)) return 'Only JPG, PNG or WEBP images are allowed.';
+      if (file.size > PHOTO_MAX_MB * 1024 * 1024) return `Photo must be under ${PHOTO_MAX_MB} MB.`;
+      return '';
+    }
+    default:
+      return '';
+  }
+}
+
 export default function RegisterPage() {
   const { dark, toggleTheme } = useTheme();
   const [form, setForm] = useState<RegistrationInput>(initialForm);
@@ -20,23 +81,25 @@ export default function RegisterPage() {
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState(0);
-  const [empIdStatus, setEmpIdStatus] = useState<'idle' | 'checking' | 'free' | 'taken'>('idle');
+  const [empStatus, setEmpStatus] = useState<EmpStatus>('idle');
+  const [errors, setErrors] = useState<Errors>({});
+  const [touched, setTouched] = useState<Touched>({});
 
   useEffect(() => {
     let cancelled = false;
     const id = form.employee_id.trim();
-    if (id.length < 7) {
-      setEmpIdStatus('idle');
+    if (!EMP_ID_RE.test(id)) {
+      setEmpStatus('idle');
       return;
     }
-    setEmpIdStatus('checking');
+    setEmpStatus('checking');
     const timer = window.setTimeout(() => {
       checkEmployeeExists(id)
         .then((exists) => {
-          if (!cancelled) setEmpIdStatus(exists ? 'taken' : 'free');
+          if (!cancelled) setEmpStatus(exists ? 'taken' : 'free');
         })
         .catch(() => {
-          if (!cancelled) setEmpIdStatus('idle');
+          if (!cancelled) setEmpStatus('idle');
         });
     }, 450);
     return () => {
@@ -45,20 +108,95 @@ export default function RegisterPage() {
     };
   }, [form.employee_id]);
 
-  function selectPhoto(file: File | null) {
-    setPhoto(file);
-    setPhotoPreview(file ? URL.createObjectURL(file) : '');
+  function fieldValue(field: keyof RegistrationInput | 'photo'): string | File | null {
+    if (field === 'photo') return photo;
+    const value = form[field as keyof RegistrationInput];
+    return typeof value === 'string' ? value : String(value ?? '');
+  }
+
+  function fieldError(field: keyof RegistrationInput | 'photo'): string {
+    if (!touched[field]) return '';
+    if (field === 'employee_id' && errors.employee_id && errors.employee_id === 'Checking employee ID…') return '';
+    return errors[field] ?? '';
+  }
+
+  function setField(field: keyof RegistrationInput, value: string) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    const err = validateField(field, value, empStatus);
+    setErrors((prev) => ({ ...prev, [field]: err }));
+  }
+
+  function blurField(field: keyof RegistrationInput | 'photo') {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    const err = validateField(field, fieldValue(field), empStatus);
+    setErrors((prev) => ({ ...prev, [field]: err }));
+  }
+
+  function validateStep(stepIndex: number): Errors {
+    const map: Array<Array<keyof RegistrationInput | 'photo'>> = [
+      ['employee_id', 'squad', 'name', 'email', 'gender'],
+      ['player_type', 'batting_style', 'bowling_style', 'bowling_arm', 'cricket_experience', 'jersey_size', 'availability'],
+      ['photo'],
+      [],
+    ];
+    const fields = map[stepIndex] ?? [];
+    const next: Errors = {};
+    for (const field of fields) {
+      next[field] = validateField(field, fieldValue(field), empStatus);
+    }
+    return next;
+  }
+
+  function isStepValid(stepIndex: number): boolean {
+    const next = validateStep(stepIndex);
+    return Object.values(next).every((err) => !err);
   }
 
   function stepValid() {
-    if (step === 0) return Boolean(form.name.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && form.employee_id.trim() && empIdStatus === 'free');
-    if (step === 1) return Boolean(form.player_type && form.batting_style && form.bowling_style && form.availability);
+    return isStepValid(step);
+  }
+
+  function handleStepChange(nextStep: number) {
+    setStep(nextStep);
+    setMessage('');
+  }
+
+  function selectPhoto(file: File | null) {
+    if (file) {
+      const err = validateField('photo', file, empStatus);
+      if (err) {
+        setErrors((prev) => ({ ...prev, photo: err }));
+        setTouched((prev) => ({ ...prev, photo: true }));
+        return;
+      }
+    }
+    setPhoto(file);
+    setPhotoPreview(file ? URL.createObjectURL(file) : '');
+    setErrors((prev) => ({ ...prev, photo: '' }));
+  }
+
+  function canNavigateTo(target: number): boolean {
+    if (target <= step) return true;
+    if (target === step + 1) return isStepValid(step);
+    for (let i = step; i < target; i++) {
+      if (!isStepValid(i)) return false;
+    }
     return true;
   }
 
   async function submit(event?: FormEvent<HTMLFormElement>) {
     if (event) event.preventDefault();
-    if (!stepValid()) return;
+    setTouched({ employee_id: true, name: true, email: true });
+    const allErrors: Errors = {};
+    const allFields: Array<keyof RegistrationInput | 'photo'> = ['employee_id', 'squad', 'name', 'email', 'gender', 'player_type', 'batting_style', 'bowling_style', 'bowling_arm', 'cricket_experience', 'jersey_size', 'availability', 'photo'];
+    for (const field of allFields) {
+      allErrors[field] = validateField(field, fieldValue(field), empStatus);
+    }
+    setErrors(allErrors);
+    if (Object.values(allErrors).some((err) => err)) {
+      setMessage('Please fix the highlighted fields below before submitting.');
+      return;
+    }
     setSubmitting(true);
     setMessage('');
     try {
@@ -71,7 +209,8 @@ export default function RegisterPage() {
         window.location.href = `/D2P/confirmation?name=${encodeURIComponent(trimmed.name)}&email=${encodeURIComponent(trimmed.email)}`;
       }
       setForm(initialForm);
-      selectPhoto(null);
+      setPhoto(null);
+      setPhotoPreview('');
     } catch (error) {
       const raw = error instanceof Error ? error.message : String(error);
       if (raw.toLowerCase().includes('duplicate') || raw.toLowerCase().includes('unique constraint')) {
@@ -90,7 +229,7 @@ export default function RegisterPage() {
     <div className={dark ? 'app dark register-page' : 'app register-page'}>
       <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
       <main className="register-main shell">
-        <form className="registration-form registration-card" onSubmit={submit}>
+        <form className="registration-form registration-card" onSubmit={submit} noValidate>
           <div className="form-card-heading">
             <span>{String(step + 1).padStart(2, '0')}</span>
             <div><h2>JOIN D2P 2026.</h2><p>Build your player profile.</p></div>
@@ -98,27 +237,98 @@ export default function RegisterPage() {
           </div>
           <Stepper
             initialStep={1}
-            onStepChange={(value) => setStep(value - 1)}
+            onStepChange={(value) => handleStepChange(value - 1)}
             onFinalStepCompleted={() => submit()}
             backButtonText="← BACK"
             nextButtonText="NEXT →"
             completeButtonText={submitting ? 'SAVING…' : '🏏 CREATE MY PLAYER PROFILE'}
             backButtonProps={{ className: 'btn btn-ghost' }}
             nextButtonProps={{ className: 'btn btn-primary', disabled: !stepValid() || submitting }}
+            isStepAllowed={(target) => canNavigateTo(target)}
           >
             <Step>
               <fieldset>
                 <legend>ABOUT YOU</legend>
                 <div className="form-grid form-grid-2">
-                  <label>Employee ID <em className="req-star">*</em><input autoComplete="off" required inputMode="numeric" pattern="[0-9]{7,8}" title="Enter your 7–8 digit employee ID" maxLength={8} placeholder="e.g. 12345678" value={form.employee_id} onChange={(event) => setForm({ ...form, employee_id: event.target.value.replace(/[^0-9]/g, '') })} />{empIdStatus === 'checking' ? <em className="emp-hint checking">Checking…</em> : empIdStatus === 'free' ? <em className="emp-hint free">✓ Great — this ID is ready to go.</em> : empIdStatus === 'taken' ? <em className="emp-hint taken">✓ Already done — this employee ID is already registered. You&apos;re all set!</em> : null}</label>
-                  <label>Squad<input autoComplete="organization" minLength={2} placeholder="e.g. Engineering, Design, Sales" value={form.squad} onChange={(event) => setForm({ ...form, squad: event.target.value })} /></label>
+                  <label className={fieldError('employee_id') ? 'has-error' : ''}>
+                    <span className="field-label">Employee ID <em className="req-star">*</em></span>
+                    <input
+                      autoComplete="off"
+                      required
+                      inputMode="numeric"
+                      pattern="[0-9]{7,8}"
+                      title="Enter your 7–8 digit employee ID"
+                      maxLength={8}
+                      placeholder="e.g. 12345678"
+                      value={form.employee_id}
+                      aria-invalid={Boolean(fieldError('employee_id'))}
+                      onChange={(event) => setField('employee_id', event.target.value.replace(/[^0-9]/g, ''))}
+                      onBlur={() => blurField('employee_id')}
+                    />
+                    {empStatus === 'checking' && !touched.employee_id ? <em className="emp-hint checking">Checking…</em> : null}
+                    {empStatus === 'free' && EMP_ID_RE.test(form.employee_id.trim()) ? <em className="emp-hint free">✓ This ID is available.</em> : null}
+                    {empStatus === 'taken' ? <em className="emp-hint taken">✓ Already done — this ID is registered.</em> : null}
+                    {fieldError('employee_id') ? <em className="field-error">{fieldError('employee_id')}</em> : null}
+                  </label>
+                  <label className={fieldError('squad') ? 'has-error' : ''}>
+                    <span className="field-label">Squad</span>
+                    <input
+                      autoComplete="organization"
+                      minLength={2}
+                      placeholder="e.g. Engineering, Design"
+                      value={form.squad}
+                      aria-invalid={Boolean(fieldError('squad'))}
+                      onChange={(event) => setField('squad', event.target.value)}
+                      onBlur={() => blurField('squad')}
+                    />
+                    {fieldError('squad') ? <em className="field-error">{fieldError('squad')}</em> : null}
+                  </label>
                 </div>
-                <label>Full name <em className="req-star">*</em><input autoComplete="name" required minLength={2} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
-                <label>Work email <em className="req-star">*</em><input autoComplete="email" required type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
-                <div className="gender-picker" role="group" aria-label="Gender">
-                  {(['Male', 'Female'] as const).map((option) => (
-                    <button type="button" className={form.gender === option ? 'on' : ''} key={option} onClick={() => setForm({ ...form, gender: option })}>{option}</button>
-                  ))}
+                <label className={fieldError('name') ? 'has-error' : ''}>
+                  <span className="field-label">Full name <em className="req-star">*</em></span>
+                  <input
+                    autoComplete="name"
+                    required
+                    minLength={2}
+                    placeholder="e.g. Virat Kohli"
+                    value={form.name}
+                    aria-invalid={Boolean(fieldError('name'))}
+                    onChange={(event) => setField('name', event.target.value)}
+                    onBlur={() => blurField('name')}
+                  />
+                  {fieldError('name') ? <em className="field-error">{fieldError('name')}</em> : null}
+                </label>
+                <label className={fieldError('email') ? 'has-error' : ''}>
+                  <span className="field-label">Work email <em className="req-star">*</em></span>
+                  <input
+                    autoComplete="email"
+                    required
+                    type="email"
+                    placeholder="e.g. you@company.com"
+                    value={form.email}
+                    aria-invalid={Boolean(fieldError('email'))}
+                    onChange={(event) => setField('email', event.target.value)}
+                    onBlur={() => blurField('email')}
+                  />
+                  {fieldError('email') ? <em className="field-error">{fieldError('email')}</em> : null}
+                </label>
+                <div className="gender-field">
+                  <span className="field-label">Gender <em className="req-star">*</em></span>
+                  <div className="gender-picker" role="group" aria-label="Gender">
+                    {(['Male', 'Female'] as const).map((option) => (
+                      <button
+                        type="button"
+                        className={form.gender === option ? 'on' : ''}
+                        key={option}
+                        onClick={() => {
+                          setForm((prev) => ({ ...prev, gender: option }));
+                          setErrors((prev) => ({ ...prev, gender: '' }));
+                        }}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </fieldset>
             </Step>
@@ -126,13 +336,34 @@ export default function RegisterPage() {
               <fieldset>
                 <legend>YOUR GAME</legend>
                 <div className="form-grid">
-                  <label>Player type<select required value={form.player_type} onChange={(event) => setForm({ ...form, player_type: event.target.value as RegistrationInput['player_type'] })}><option>Batter</option><option>Bowler</option><option>All-rounder</option><option>Wicketkeeper-batter</option></select></label>
-                  <label>Batting style<select required value={form.batting_style} onChange={(event) => setForm({ ...form, batting_style: event.target.value as RegistrationInput['batting_style'] })}><option>Right-hand batter</option><option>Left-hand batter</option></select></label>
-                  <label>Bowling style<select required value={form.bowling_style} onChange={(event) => setForm({ ...form, bowling_style: event.target.value as RegistrationInput['bowling_style'] })}><option>Do not bowl</option><option>Right-arm pace</option><option>Left-arm pace</option><option>Right-arm spin</option><option>Left-arm spin</option></select></label>
-                  <label>Bowling arm<select required value={form.bowling_arm} onChange={(event) => setForm({ ...form, bowling_arm: event.target.value as RegistrationInput['bowling_arm'] })}><option>Not applicable</option><option>Right arm</option><option>Left arm</option></select></label>
-                  <label>Experience<select required value={form.cricket_experience} onChange={(event) => setForm({ ...form, cricket_experience: event.target.value as RegistrationInput['cricket_experience'] })}><option>New to cricket</option><option>Casual player</option><option>Club / college player</option><option>Experienced league player</option></select></label>
-                  <label>Jersey size<select required value={form.jersey_size} onChange={(event) => setForm({ ...form, jersey_size: event.target.value as RegistrationInput['jersey_size'] })}><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select></label>
-                  <label>Match availability<select required value={form.availability} onChange={(event) => setForm({ ...form, availability: event.target.value as RegistrationInput['availability'] })}><option>Available for all matches</option><option>Available for most matches</option><option>Need schedule confirmation</option></select></label>
+                  <label className={fieldError('player_type') ? 'has-error' : ''}>
+                    <span className="field-label">Player type</span>
+                    <select required value={form.player_type} aria-invalid={Boolean(fieldError('player_type'))} onChange={(event) => setField('player_type', event.target.value)} onBlur={() => blurField('player_type')}><option>Batter</option><option>Bowler</option><option>All-rounder</option><option>Wicketkeeper-batter</option></select>
+                  </label>
+                  <label className={fieldError('batting_style') ? 'has-error' : ''}>
+                    <span className="field-label">Batting style</span>
+                    <select required value={form.batting_style} aria-invalid={Boolean(fieldError('batting_style'))} onChange={(event) => setField('batting_style', event.target.value)} onBlur={() => blurField('batting_style')}><option>Right-hand batter</option><option>Left-hand batter</option></select>
+                  </label>
+                  <label className={fieldError('bowling_style') ? 'has-error' : ''}>
+                    <span className="field-label">Bowling style</span>
+                    <select required value={form.bowling_style} aria-invalid={Boolean(fieldError('bowling_style'))} onChange={(event) => setField('bowling_style', event.target.value)} onBlur={() => blurField('bowling_style')}><option>Do not bowl</option><option>Right-arm pace</option><option>Left-arm pace</option><option>Right-arm spin</option><option>Left-arm spin</option></select>
+                  </label>
+                  <label className={fieldError('bowling_arm') ? 'has-error' : ''}>
+                    <span className="field-label">Bowling arm</span>
+                    <select required value={form.bowling_arm} aria-invalid={Boolean(fieldError('bowling_arm'))} onChange={(event) => setField('bowling_arm', event.target.value)} onBlur={() => blurField('bowling_arm')}><option>Not applicable</option><option>Right arm</option><option>Left arm</option></select>
+                  </label>
+                  <label className={fieldError('cricket_experience') ? 'has-error' : ''}>
+                    <span className="field-label">Experience</span>
+                    <select required value={form.cricket_experience} aria-invalid={Boolean(fieldError('cricket_experience'))} onChange={(event) => setField('cricket_experience', event.target.value)} onBlur={() => blurField('cricket_experience')}><option>New to cricket</option><option>Casual player</option><option>Club / college player</option><option>Experienced league player</option></select>
+                  </label>
+                  <label className={fieldError('jersey_size') ? 'has-error' : ''}>
+                    <span className="field-label">Jersey size</span>
+                    <select required value={form.jersey_size} aria-invalid={Boolean(fieldError('jersey_size'))} onChange={(event) => setField('jersey_size', event.target.value)} onBlur={() => blurField('jersey_size')}><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
+                  </label>
+                  <label className={fieldError('availability') ? 'has-error' : ''}>
+                    <span className="field-label">Match availability</span>
+                    <select required value={form.availability} aria-invalid={Boolean(fieldError('availability'))} onChange={(event) => setField('availability', event.target.value)} onBlur={() => blurField('availability')}><option>Available for all matches</option><option>Available for most matches</option><option>Need schedule confirmation</option></select>
+                  </label>
                 </div>
               </fieldset>
             </Step>
@@ -146,6 +377,7 @@ export default function RegisterPage() {
                     <input accept="image/png,image/jpeg,image/webp" type="file" onChange={(event) => selectPhoto(event.target.files?.[0] ?? null)} />
                   </span>
                   <span className="selfie-note">jpg / png / webp · max 4 MB{photoPreview ? <button className="photo-clear" type="button" onClick={() => selectPhoto(null)}>Remove</button> : null}</span>
+                  {fieldError('photo') ? <em className="field-error photo-error">{fieldError('photo')}</em> : null}
                 </label>
               </fieldset>
             </Step>
@@ -168,7 +400,7 @@ export default function RegisterPage() {
               </fieldset>
             </Step>
           </Stepper>
-          {message && <p className="form-message" role="status">{message}</p>}
+          {message && <p className={`form-message${message.toLowerCase().includes('fix') ? ' error' : ''}`} role="status">{message}</p>}
           <small className="privacy-note">Your details are used for DPL registration and team selection only.</small>
         </form>
       </main>
