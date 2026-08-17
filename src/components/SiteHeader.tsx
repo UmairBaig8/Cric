@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import GlassSurface from './GlassSurface';
 
 const navLinks = [
@@ -38,7 +38,7 @@ export default function SiteHeader({ dark, onToggleTheme, relative }: SiteHeader
         <div className="theme-switch"><button className={!dark ? 'active' : ''} type="button" aria-label="Light theme" onClick={() => onToggleTheme(false)}>☼</button><button className={dark ? 'active' : ''} type="button" aria-label="Dark theme" onClick={() => onToggleTheme(true)}>☾</button></div>
       </GlassSurface>
       <nav className={open ? 'nav open' : 'nav'}>
-        {navLinks.map(([to, label]) => <Link key={to} to={to} onClick={() => setOpen(false)}>{label}</Link>)}
+        {navLinks.map(([to, label]) => <NavLink key={to} to={to} end={to === '/teams' ? false : true} className={({ isActive }) => isActive ? 'active' : undefined} style={({ isActive }) => isActive ? { color: '#00e5ff', textShadow: '0 0 12px rgba(0,229,255,.8)' } : undefined} onClick={() => setOpen(false)}>{label}</NavLink>)}
       </nav>
     </header>
   );
