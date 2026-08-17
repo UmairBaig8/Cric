@@ -210,8 +210,6 @@ const ElectricBorder = ({
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.scale(dpr, dpr);
 
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
@@ -226,7 +224,7 @@ const ElectricBorder = ({
       const approximatePerimeter = 2 * (borderWidth + borderHeight) + 2 * Math.PI * radius;
       const sampleCount = Math.floor(approximatePerimeter / 2);
 
-      ctx.beginPath();
+      const points: Array<{ x: number; y: number }> = [];
 
       for (let i = 0; i <= sampleCount; i++) {
         const progress = i / sampleCount;
@@ -259,15 +257,45 @@ const ElectricBorder = ({
         const displacedX = point.x + xNoise * scale;
         const displacedY = point.y + yNoise * scale;
 
-        if (i === 0) {
-          ctx.moveTo(displacedX, displacedY);
-        } else {
-          ctx.lineTo(displacedX, displacedY);
-        }
+        points.push({ x: displacedX, y: displacedY });
       }
 
-      ctx.closePath();
+      const drawPath = () => {
+        ctx.beginPath();
+        points.forEach((point, index) => {
+          if (index === 0) ctx.moveTo(point.x, point.y);
+          else ctx.lineTo(point.x, point.y);
+        });
+        ctx.closePath();
+      };
+
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = 0.9;
+      ctx.lineWidth = 7;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 18;
+      drawPath();
       ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = 0.95;
+      ctx.lineWidth = 2.6;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 7;
+      drawPath();
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = '#e9feff';
+      ctx.globalAlpha = 0.95;
+      ctx.lineWidth = 0.9;
+      drawPath();
+      ctx.stroke();
+      ctx.restore();
 
       animationRef.current = requestAnimationFrame(drawElectricBorder);
     };
