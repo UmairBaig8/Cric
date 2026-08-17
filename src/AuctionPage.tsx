@@ -51,7 +51,7 @@ export default function AuctionPage() {
         </section>
         <div className="auction-toolbar">
           <div className="auction-count">{players.length} PLAYERS IN THE POOL</div>
-          <div className="auction-search"><input value={query} onChange={(event) => { setQuery(event.target.value); setVisible(PAGE_SIZE); }} placeholder="Search name, role, squad, gender…" /></div>
+          <div className="auction-search"><span className="auction-search-icon">🔎</span><input value={query} onChange={(event) => { setQuery(event.target.value); setVisible(PAGE_SIZE); }} placeholder="Search name, role, squad, gender…" /></div>
         </div>
         {loading ? (
           <div className="auction-empty"><div className="auction-empty-badge">⚒</div><h2>LOADING PLAYERS…</h2></div>
