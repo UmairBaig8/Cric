@@ -233,7 +233,7 @@ const THEME_CHOICES = ['kings', 'mavale', 'mitra', 'blaster', 'dhada', 'wala', '
 
 function TeamsTab({ notify }: { notify: (m: string) => void }) {
   const [teams, setTeams] = useState<AdminTeam[]>([]);
-  const [editing, setEditing] = useState<AdminTeam | 'new' | null>(null);
+  const [editing, setEditing] = useState<AdminTeam | null>(null);
   const [busy, setBusy] = useState(false);
 
   const reload = () => {
@@ -256,7 +256,7 @@ function TeamsTab({ notify }: { notify: (m: string) => void }) {
       champion: editing.champion,
       sort_order: editing.sort_order,
     };
-    const { error } = await adminUpsertTeam(editing === 'new' ? { ...payload, id: undefined } : { ...payload, id: editing.id });
+    const { error } = await adminUpsertTeam(editing.id ? { ...payload, id: editing.id } : { ...payload, id: undefined });
     setBusy(false);
     if (!error) {
       setEditing(null);
@@ -284,7 +284,7 @@ function TeamsTab({ notify }: { notify: (m: string) => void }) {
       </div>
       {editing && (
         <form className="admin-edit" onSubmit={save}>
-          <h3>{editing === 'new' ? 'NEW TEAM' : `EDIT ${(editing as AdminTeam).name.toUpperCase()}`}</h3>
+          <h3>{editing.id ? `EDIT ${editing.name.toUpperCase()}` : 'NEW TEAM'}</h3>
           <div className="admin-grid">
             <label>NAME<input type="text" required value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></label>
             <label>CODE<input type="text" required value={editing.code ?? ''} onChange={(e) => setEditing({ ...editing, code: e.target.value })} /></label>

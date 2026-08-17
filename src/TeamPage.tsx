@@ -74,7 +74,7 @@ function TeamDetail({
   players,
 }: {
   dark: boolean;
-  toggleTheme: () => void;
+  toggleTheme: (nextDark: boolean) => void;
   name: string;
   code: string;
   img: string;
