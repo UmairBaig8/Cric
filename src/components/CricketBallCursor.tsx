@@ -12,6 +12,33 @@ export interface CricketBallCursorProps {
   zIndex?: number;
 }
 
+const CricketBallSvg = () => (
+  <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+    <defs>
+      <radialGradient id="cbLeather" cx="35%" cy="28%" r="85%">
+        <stop offset="0%" stopColor="#ff7a4f" />
+        <stop offset="30%" stopColor="#e23416" />
+        <stop offset="72%" stopColor="#b01c06" />
+        <stop offset="100%" stopColor="#5f0d00" />
+      </radialGradient>
+      <filter id="cbInnerShadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur" />
+        <feOffset dx="1" dy="2" result="off" />
+        <feFlood floodColor="#000" floodOpacity="0.55" />
+        <feComposite in2="off" operator="in" />
+        <feComposite in2="SourceGraphic" operator="over" />
+      </filter>
+    </defs>
+    <circle cx="50" cy="50" r="47" fill="url(#cbLeather)" filter="url(#cbInnerShadow)" />
+    <path d="M 14 30 Q 50 52 86 70" fill="none" stroke="#f2e3c4" strokeWidth="3.4" strokeLinecap="round" />
+    <path d="M 86 30 Q 50 52 14 70" fill="none" stroke="#f2e3c4" strokeWidth="3.4" strokeLinecap="round" />
+    <path d="M 14 30 Q 50 52 86 70" fill="none" stroke="#7a3a12" strokeWidth="1" strokeLinecap="round" strokeDasharray="1.6 4" />
+    <path d="M 86 30 Q 50 52 14 70" fill="none" stroke="#7a3a12" strokeWidth="1" strokeLinecap="round" strokeDasharray="1.6 4" />
+    <path d="M 24 28 Q 20 40 25 44 M 76 70 Q 80 58 75 54 M 48 48 Q 52 52 48 56" fill="none" stroke="#f2e3c4" strokeWidth="1.4" strokeLinecap="round" />
+    <ellipse cx="34" cy="26" rx="16" ry="9" fill="rgba(255,255,255,0.28)" transform="rotate(-28 34 26)" />
+  </svg>
+);
+
 const CricketBallCursor = ({
   trailCount = 3,
   sizes = [42, 58, 78],
@@ -83,9 +110,7 @@ const CricketBallCursor = ({
               opacity: opacities[i],
             }}
           >
-            <span className="cb-seam cb-seam-h" />
-            <span className="cb-seam cb-seam-v" />
-            <span className="cb-shine" />
+            <CricketBallSvg />
           </div>
         ))}
       </div>
