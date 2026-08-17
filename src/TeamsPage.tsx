@@ -2,16 +2,16 @@ import SiteHeader from './components/SiteHeader';
 import { useTheme } from './lib/useTheme';
 
 const TEAMS = [
-  ['Digi Super Kings', 'DSK', 0, 0, 'kings'],
-  ['Sahadriche Mavale', 'SM', 1, 0, 'mavale'],
-  ['Digi Mitra Mandal', 'DMM', 2, 0, 'mitra'],
-  ['Bhakarwadi Blasters', 'BB', 3, 0, 'blaster'],
-  ['Digi Dhadakebaaz', 'DD', 4, 0, 'dhada'],
-  ['Cricket Wala', 'CW', 0, 1, 'wala'],
-  ['Digi Titans', 'DT', 1, 1, 'titans'],
-  ['Digi Yodhas', 'DY', 2, 1, 'yodhas'],
-  ['Gallit Maramari', 'GM', 3, 1, 'gallit'],
-  ['Digi Dhurandhars', 'DDH', 4, 1, 'dhurandhars'],
+  { name: 'Digi Super Kings', code: 'DSK', img: '/D2P/teams/dsk.png', theme: 'kings' },
+  { name: 'Sahadriche Mavale', code: 'SM', img: '/D2P/teams/mavale.png', theme: 'mavale' },
+  { name: 'Digi Mitra Mandal', code: 'DMM', img: '/D2P/teams/mitra.png', theme: 'mitra' },
+  { name: 'Bhakarwadi Blasters', code: 'BB', img: '/D2P/teams/blaster.png', theme: 'blaster' },
+  { name: 'Digi Dhadakebaaz', code: 'DD', img: '/D2P/teams/dhada.png', theme: 'dhada' },
+  { name: 'Cricket Wala', code: 'CW', img: '/D2P/teams/wala.png', theme: 'wala' },
+  { name: 'Digi Titans', code: 'DT', img: '/D2P/teams/titans.png', theme: 'titans' },
+  { name: 'Digi Yodhas', code: 'DY', img: '/D2P/teams/yodhas.png', theme: 'yodhas' },
+  { name: 'Gallit Maramari', code: 'GM', img: '/D2P/teams/gallit.png', theme: 'gallit' },
+  { name: 'Digi Dhurandhars', code: 'DDH', img: '/D2P/teams/dhurandhars.png', theme: 'dhurandhars' },
 ] as const;
 
 export default function TeamsPage() {
@@ -27,9 +27,9 @@ export default function TeamsPage() {
           <p className="teams-desc">Ten teams. Ten identities. One trophy. Meet the squads stepping out of the office and onto the pitch.</p>
         </div>
         <section className="teams-grid">
-          {TEAMS.map(([name, code, col, row, theme], i) => (
-            <article className={`team-card ${theme}`} style={{ '--col': col, '--row': row } as React.CSSProperties} key={code}>
-              <div className="team-sprite"><img src="/D2P/teams-icons.png" alt={name} /></div>
+          {TEAMS.map(({ name, code, img, theme }, i) => (
+            <article className={`team-card ${theme}`} key={code}>
+              <div className="team-sprite"><img src={img} alt={name} /></div>
               <div className="team-meta">
                 <div className="team-code">{code} · TEAM {String(i + 1).padStart(2, '0')}</div>
                 <div className="team-name">{name}</div>
