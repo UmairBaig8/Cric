@@ -10,7 +10,7 @@ export default function TeamsPage() {
       <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
       <main className="teams-main shell">
         <section className="teams-grid">
-          {TEAMS.map(({ name, code, img, theme, players, champion }, i) => (
+          {TEAMS.map(({ name, code, img, theme, players, champion, owner, captain }, i) => (
             <a className={`team-card ${theme}${champion ? ' champion' : ''}`} key={code} href={`/D2P/teams/${code}`}>
               {champion && (
                 <span className="team-champion" title="DPL 2025 Champions">
@@ -22,6 +22,10 @@ export default function TeamsPage() {
               <div className="team-meta">
                 <div className="team-code">{code} · TEAM {String(i + 1).padStart(2, '0')}</div>
                 <div className="team-name">{name}</div>
+                <div className="team-leads">
+                  <div className="team-lead"><span>OWNER</span><b>{owner}</b></div>
+                  <div className="team-lead"><span>CAPTAIN</span><b>{captain}</b></div>
+                </div>
                 <div className="team-players"><span className="team-count">{players} PLAYERS</span><span className="team-view">VIEW TEAM</span></div>
                 <div className="team-arrow">↗</div>
               </div>

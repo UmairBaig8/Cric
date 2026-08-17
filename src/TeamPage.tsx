@@ -37,6 +37,10 @@ export default function TeamPage() {
             </div>
             <h1>{team.name}</h1>
             <p className="teams-desc">{team.players} players locked in. One goal: lift the DPL 2026 trophy.</p>
+            <div className="team-leads">
+              <div className="team-lead"><span>OWNER</span><b>{team.owner}</b></div>
+              <div className="team-lead"><span>CAPTAIN</span><b>{team.captain}</b></div>
+            </div>
             {team.champion && (
               <span className="team-champion hero">
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M12 2l2.6 6.6 7 .6-5.3 4.6 1.6 6.9L12 17.3l-5.9 3.4 1.6-6.9L2.4 9.2l7-.6z"/></svg>
