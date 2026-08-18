@@ -418,19 +418,37 @@ export default function RegisterPage() {
             </div>
 
             <div className="stepper-step-body">
-              <div className="reg-summary">
-                <div className="reg-summary-avatar">{photoPreview ? <img alt="Preview" src={photoPreview} /> : <span>{initials}</span>}</div>
-                <div className="reg-summary-row"><span>Name</span><b>{form.name.trim() || '—'}</b></div>
-                <div className="reg-summary-row"><span>Employee ID</span><b>{form.employee_id.trim() || '—'}</b></div>
-                <div className="reg-summary-row"><span>Email</span><b>{form.email.trim() || '—'}</b></div>
-                <div className="reg-summary-row"><span>Location</span><b>{form.location}</b></div>
-                <div className="reg-summary-row"><span>Gender</span><b>{form.gender}</b></div>
-                <div className="reg-summary-row"><span>Player type</span><b>{form.player_type}</b></div>
-                <div className="reg-summary-row"><span>Batting</span><b>{form.batting_style}</b></div>
-                <div className="reg-summary-row"><span>Bowling</span><b>{form.bowling_style}</b></div>
-                <div className="reg-summary-row"><span>Played DPL</span><b>{form.dpl_played ? 'Yes' : 'No'}</b></div>
-                <div className="reg-summary-row"><span>Self rating</span><b>{'★'.repeat(form.self_rating)}{'☆'.repeat(5 - form.self_rating)}</b></div>
-                <div className="reg-summary-row"><span>Availability</span><b>{form.availability}</b></div>
+              <div className="reg-confirm">
+                <p className="reg-confirm-title">YOUR PLAYER CARD</p>
+                <div className="reg-pc reg-pc-static">
+                  <div className="reg-pc-side">
+                    <div className="reg-pc-photo">
+                      {photoPreview ? <img alt="Preview" src={photoPreview} /> : <span className="reg-pc-fallback"><i>{initials}</i></span>}
+                      <span className="reg-pc-grad" />
+                      <span className="reg-pc-role">{form.player_type}</span>
+                    </div>
+                    <div className="reg-pc-body">
+                      <div className="reg-pc-top">
+                        <span className="reg-pc-league">DPL <b>2026</b></span>
+                        <span className="reg-pc-no">#{form.employee_id.trim() || '—'}</span>
+                      </div>
+                      <strong className="reg-pc-name">{form.name.trim() || 'Your player card'}</strong>
+                      <span className="reg-pc-squad">{form.location} · {form.gender}</span>
+                      <div className="reg-pc-tags">
+                        <span className={form.dpl_played ? 'reg-pc-tag-dpl on' : 'reg-pc-tag-dpl'}>{form.dpl_played ? 'DPL VET' : 'DPL ROOKIE'}</span>
+                      </div>
+                      <div className="reg-pc-styles">
+                        <span>{form.batting_style}</span>
+                        <span>{form.bowling_style}</span>
+                      </div>
+                      <div className="reg-confirm-extra">
+                        <div className="reg-confirm-extra-row"><span>EMAIL</span><b>{form.email.trim() || '—'}</b></div>
+                        <div className="reg-confirm-extra-row"><span>SELF RATING</span><b>{'★'.repeat(form.self_rating)}{'☆'.repeat(5 - form.self_rating)}</b></div>
+                        <div className="reg-confirm-extra-row"><span>AVAILABILITY</span><b>{form.availability}</b></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </Stepper>
