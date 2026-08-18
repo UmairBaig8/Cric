@@ -1,6 +1,8 @@
 -- admin full-edit: expose cricketing profile fields on admin_players
 -- so the admin (central authority) can edit every registration column.
-create or replace function public.admin_players()
+-- NOTE: return type changed vs 00007, so the old function must be dropped first.
+drop function if exists public.admin_players();
+create function public.admin_players()
 returns table (
   id uuid,
   name text,
