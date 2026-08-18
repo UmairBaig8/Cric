@@ -23,9 +23,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import DashboardTab from '@/admin/DashboardTab';
 import PlayersTab from '@/admin/PlayersTab';
+import WorkflowTab from '@/admin/WorkflowTab';
 import {
   fetchAdminTeams,
   fetchAdminPlayers,
+  fetchPendingEdits,
   isCurrentUserAdmin,
   getCurrentUserEmail,
   signInAdmin,
@@ -60,7 +62,7 @@ const settingsSchema = z.object({
 
 type SettingsValues = z.infer<typeof settingsSchema>;
 
-const TAB_KEYS = ['dashboard', 'settings', 'teams', 'players'] as const;
+const TAB_KEYS = ['dashboard', 'settings', 'teams', 'players', 'workflow'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 export default function AdminPage() {
@@ -78,6 +80,15 @@ export default function AdminPage() {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [tab, setTab] = useState<TabKey>('dashboard');
   const [playersPreset, setPlayersPreset] = useState<{ photo?: boolean; unassigned?: boolean } | null>(null);
+  const [pendingEdits, setPendingEdits] = useState(0);
+
+  useEffect(() => {
+    let alive = true;
+    const load = () => fetchPendingEdits().then((rows) => { if (alive) setPendingEdits(rows.length); });
+    load();
+    const id = window.setInterval(load, 60000);
+    return () => { alive = false; window.clearInterval(id); };
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -220,6 +231,11 @@ export default function AdminPage() {
                     <GripVertical />
                   </span>
                   {tab.toUpperCase()}
+                  {tab === 'workflow' && pendingEdits > 0 && (
+                    <span className="ml-1.5 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold leading-none text-primary-foreground">
+                      {pendingEdits}
+                    </span>
+                  )}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -239,6 +255,9 @@ export default function AdminPage() {
           </TabsContent>
           <TabsContent value="players">
             <PlayersTab preset={playersPreset} onPresetApplied={() => setPlayersPreset(null)} />
+          </TabsContent>
+          <TabsContent value="workflow">
+            <WorkflowTab />
           </TabsContent>
         </Tabs>
       </main>

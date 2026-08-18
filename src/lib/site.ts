@@ -99,6 +99,69 @@ export async function fetchTeamRoster(teamCode: string): Promise<TeamRosterPlaye
   return error ? [] : (data as TeamRosterPlayer[]);
 }
 
+export type PublicPlayer = {
+  id: string;
+  name: string;
+  photo_url: string | null;
+  player_type: string;
+  gender: string;
+  location: string;
+  batting_style: string | null;
+  bowling_style: string | null;
+  bowling_arm: string | null;
+  availability: string | null;
+  self_rating: number | null;
+  dpl_played: boolean;
+  jersey_size: string | null;
+  created_at: string;
+};
+
+export async function fetchPlayersList(): Promise<PublicPlayer[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('players_list');
+  return error ? [] : (data as PublicPlayer[]);
+}
+
+export type EditRequest = {
+  id: string;
+  player_id: string;
+  player_name: string;
+  changes: Record<string, unknown>;
+  status: 'pending' | 'approved' | 'rejected';
+  admin_note: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+};
+
+export async function submitPlayerEdit(playerId: string, playerName: string, changes: Record<string, unknown>): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Supabase is not configured.' };
+  const { error } = await supabase.from('player_edit_requests').insert({ player_id: playerId, player_name: playerName, changes });
+  if (error) return { error: error.message };
+  return {};
+}
+
+export async function fetchPendingEdits(): Promise<EditRequest[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.from('player_edit_requests').select('*').eq('status', 'pending').order('created_at', { ascending: false });
+  return error ? [] : (data as EditRequest[]);
+}
+
+export async function reviewPlayerEdit(requestId: string, decision: 'approved' | 'rejected', note?: string | null): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Supabase is not configured.' };
+  const { data: request, error: fetchError } = await supabase.from('player_edit_requests').select('*').eq('id', requestId).single();
+  if (fetchError || !request) return { error: fetchError?.message ?? 'Request not found.' };
+  if (decision === 'approved') {
+    const apply = await adminUpdatePlayer(request.player_id, request.changes as Parameters<typeof adminUpdatePlayer>[1]);
+    if (apply.error) return apply;
+  }
+  const { error } = await supabase.from('player_edit_requests')
+    .update({ status: decision, admin_note: note ?? null, reviewed_at: new Date().toISOString() })
+    .eq('id', requestId);
+  if (error) return { error: error.message };
+  void logAudit(`edit.${decision}`, request.player_id, { request_id: requestId, note: note ?? null });
+  return {};
+}
+
 // ---------- Admin ----------
 
 export async function logAudit(action: string, targetId: string | null, detail?: Record<string, unknown>) {

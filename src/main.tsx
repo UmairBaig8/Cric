@@ -7,6 +7,7 @@ import RegisterPage from '@/pages/RegisterPage';
 import ConfirmationPage from '@/pages/ConfirmationPage';
 import AuctionPage from '@/pages/AuctionPage';
 import TeamsPage from '@/pages/TeamsPage';
+import PlayersPage from '@/pages/PlayersPage';
 import TeamPage from '@/pages/TeamPage';
 import AdminPage from '@/admin/AdminPage';
 import ComingSoonPage from '@/pages/ComingSoonPage';
@@ -24,6 +25,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/confirmation" element={<ConfirmationPage />} />
         <Route path="/teams" element={<TeamsPage />} />
         <Route path="/teams/:code" element={<TeamPage />} />
+        <Route path="/players" element={<PlayersPage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/fixtures" element={<ComingSoonPage eyebrow="DPL 2026 / FIXTURES" title="FIXTURES" copy="The full match schedule with dates, venues, and results will live here." icon="📅" backgroundImage={withBase('/fixtures.png')} />} />
         <Route path="/auction" element={<AuctionPage />} />
