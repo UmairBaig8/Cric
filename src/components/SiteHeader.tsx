@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { withBase } from '../lib/base';
+import { withBase } from '@/lib/base';
 
 const navLinks: Array<[string, string, boolean]> = [
   ['/', 'HOME', true],
@@ -30,7 +30,7 @@ export default function SiteHeader({ dark, onToggleTheme, relative }: SiteHeader
 
       <div className="topbar-right">
         <button className="nav-toggle" type="button" aria-label="Menu" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? '✕' : '☰'}</button>
-        <a className="topbar-join" href={withBase('/register')}>JOIN</a>
+        <a className="topbar-join" href={withBase("/register")}>JOIN</a>
         <div className="theme-switch"><button className={!dark ? 'active' : ''} type="button" aria-label="Light theme" onClick={() => onToggleTheme(false)}>☼</button><button className={dark ? 'active' : ''} type="button" aria-label="Dark theme" onClick={() => onToggleTheme(true)}>☾</button></div>
       </div>
     </header>

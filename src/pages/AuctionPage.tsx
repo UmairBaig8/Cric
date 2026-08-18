@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useTheme } from './lib/useTheme';
-import SiteHeader from './components/SiteHeader';
-import DepthCarousel from './components/DepthCarousel';
-import SpotlightCard from './components/SpotlightCard';
-import { withBase } from './lib/base';
-import { fetchAuctionPlayers, type AuctionPlayer } from './lib/site';
+import { useTheme } from '@/lib/useTheme';
+import { withBase } from '@/lib/base';
+import SiteHeader from '@/components/SiteHeader';
+import DepthCarousel from '@/components/DepthCarousel';
+import SpotlightCard from '@/components/SpotlightCard';
+import { fetchAuctionPlayers, type AuctionPlayer } from '@/lib/site';
 
 const availabilityShort: Record<string, string> = {
   'Available for all matches': 'ALL MATCHES',
@@ -122,7 +122,7 @@ export default function AuctionPage() {
             <div className="auction-empty-badge">{query.trim() ? '🔍' : '⚒'}</div>
             <h2>{query.trim() ? 'NO MATCHES' : 'NO PLAYERS YET'}</h2>
             <p>{query.trim() ? `Nothing matches "${query.trim()}". Try a different search.` : 'Players registered so far will appear here as soon as they sign up.'}</p>
-            {query.trim() ? null : <a className="btn btn-primary" href={withBase('/register')}>🏏 REGISTER AS A PLAYER →</a>}
+            {query.trim() ? null : <a className="btn btn-primary" href={withBase("/register")}>🏏 REGISTER AS A PLAYER →</a>}
           </div>
         )}
       </main>

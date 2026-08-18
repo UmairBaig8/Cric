@@ -101,6 +101,14 @@ export async function fetchTeamRoster(teamCode: string): Promise<TeamRosterPlaye
 
 // ---------- Admin ----------
 
+export async function logAudit(action: string, targetId: string | null, detail?: Record<string, unknown>) {
+  if (!supabase) return;
+  const { data } = await supabase.auth.getUser();
+  const actorEmail = data.user?.email ?? null;
+  if (!actorEmail) return;
+  await supabase.from('admin_audit').insert({ actor_email: actorEmail, action, target_id: targetId, detail: detail ?? null });
+}
+
 export type AdminPlayer = {
   id: string;
   name: string;
@@ -112,6 +120,10 @@ export type AdminPlayer = {
   location: string;
   dpl_played: boolean;
   self_rating: number;
+  batting_style: string | null;
+  bowling_style: string | null;
+  bowling_arm: string | null;
+  availability: string | null;
   created_at: string;
   team_id: string | null;
   team_code: string | null;
@@ -194,13 +206,17 @@ export async function adminUpsertTeam(team: {
   const { error } = team.id
     ? await supabase.from('teams').update(team).eq('id', team.id)
     : await supabase.from('teams').insert(team);
-  return error ? { error: error.message } : {};
+  if (error) return { error: error.message };
+  void logAudit(team.id ? 'team.update' : 'team.add', team.id ?? null, { name: team.name, code: team.code });
+  return {};
 }
 
 export async function adminDeleteTeam(id: string): Promise<{ error?: string }> {
   if (!supabase) return { error: 'Supabase is not configured.' };
   const { error } = await supabase.from('teams').delete().eq('id', id);
-  return error ? { error: error.message } : {};
+  if (error) return { error: error.message };
+  void logAudit('team.delete', id, {});
+  return {};
 }
 
 export async function adminAssignPlayer(playerId: string, teamId: string, role: string): Promise<{ error?: string }> {
@@ -209,17 +225,61 @@ export async function adminAssignPlayer(playerId: string, teamId: string, role: 
     { team_id: teamId, player_id: playerId, role },
     { onConflict: 'team_id,player_id' },
   );
-  return error ? { error: error.message } : {};
+  if (error) return { error: error.message };
+  void logAudit('player.assign', playerId, { team_id: teamId, role });
+  return {};
 }
 
 export async function adminRemovePlayerFromTeam(playerId: string): Promise<{ error?: string }> {
   if (!supabase) return { error: 'Supabase is not configured.' };
   const { error } = await supabase.from('team_players').delete().eq('player_id', playerId);
-  return error ? { error: error.message } : {};
+  if (error) return { error: error.message };
+  void logAudit('player.unassign', playerId, {});
+  return {};
 }
 
-export async function adminUpdatePlayer(playerId: string, patch: { name?: string; location?: string; dpl_played?: boolean; player_type?: string }): Promise<{ error?: string }> {
+export async function adminAddPlayer(player: {
+  name: string;
+  email: string;
+  employee_id: string;
+  gender?: string | null;
+  location?: string | null;
+  player_type: string;
+  batting_style: string;
+  bowling_style: string;
+  bowling_arm: string;
+  cricket_experience: string;
+  jersey_size: string;
+  availability: string;
+  self_rating?: number;
+  dpl_played?: boolean;
+  photo_url?: string | null;
+}): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Supabase is not configured.' };
+  const { error } = await supabase.from('registrations').insert(player);
+  if (error) return { error: error.message };
+  void logAudit('player.add', null, { name: player.name, employee_id: player.employee_id });
+  return {};
+}
+
+export async function adminUpdatePlayer(playerId: string, patch: {
+  name?: string;
+  email?: string;
+  employee_id?: string | null;
+  location?: string;
+  dpl_played?: boolean;
+  player_type?: string;
+  gender?: string;
+  self_rating?: number;
+  batting_style?: string | null;
+  bowling_style?: string | null;
+  bowling_arm?: string | null;
+  availability?: string | null;
+  photo_url?: string | null;
+}): Promise<{ error?: string }> {
   if (!supabase) return { error: 'Supabase is not configured.' };
   const { error } = await supabase.from('registrations').update(patch).eq('id', playerId);
-  return error ? { error: error.message } : {};
+  if (error) return { error: error.message };
+  void logAudit('player.update', playerId, { patch });
+  return {};
 }

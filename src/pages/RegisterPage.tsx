@@ -1,11 +1,11 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { registerPlayer, checkEmployeeExists } from './lib/registrations';
-import { useTheme } from './lib/useTheme';
-import SiteHeader from './components/SiteHeader';
-import Stepper from './components/Stepper';
-import BorderGlow from './components/BorderGlow';
-import { withBase } from './lib/base';
-import type { RegistrationInput } from './types';
+import { registerPlayer, checkEmployeeExists } from '@/lib/registrations';
+import { useTheme } from '@/lib/useTheme';
+import SiteHeader from '@/components/SiteHeader';
+import Stepper from '@/components/Stepper';
+import BorderGlow from '@/components/BorderGlow';
+import { withBase } from '@/lib/base';
+import type { RegistrationInput } from '@/types';
 
 const initialForm: RegistrationInput = {
   name: '', email: '', employee_id: '', gender: 'Male', location: 'CZ', dpl_played: false, self_rating: 3,

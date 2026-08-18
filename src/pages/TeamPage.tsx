@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import SiteHeader from './components/SiteHeader';
-import BorderGlow from './components/BorderGlow';
-import { useTheme } from './lib/useTheme';
-import { fetchTeamsList, fetchTeamRoster, type TeamRow, type TeamRosterPlayer } from './lib/site';
-import { resolveAsset } from './lib/base';
+import SiteHeader from '@/components/SiteHeader';
+import BorderGlow from '@/components/BorderGlow';
+import { useTheme } from '@/lib/useTheme';
+import { fetchTeamsList, fetchTeamRoster, type TeamRow, type TeamRosterPlayer } from '@/lib/site';
+import { resolveAsset } from '@/lib/base';
 
 export default function TeamPage() {
   const { dark, toggleTheme } = useTheme();
