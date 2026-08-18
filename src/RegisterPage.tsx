@@ -4,6 +4,7 @@ import { useTheme } from './lib/useTheme';
 import SiteHeader from './components/SiteHeader';
 import Stepper from './components/Stepper';
 import BorderGlow from './components/BorderGlow';
+import { withBase } from './lib/base';
 import type { RegistrationInput } from './types';
 
 const initialForm: RegistrationInput = {
@@ -167,7 +168,7 @@ export default function RegisterPage() {
         setMessage({ kind: 'success', text: 'Demo registration saved locally. Connect Supabase to go live.' });
         setSubmitting(false);
       } else {
-        window.location.href = `/D2P/confirmation?name=${encodeURIComponent(trimmed.name)}&email=${encodeURIComponent(trimmed.email)}`;
+        window.location.href = `${withBase('/confirmation')}?name=${encodeURIComponent(trimmed.name)}&email=${encodeURIComponent(trimmed.email)}`;
       }
     } catch (error) {
       const raw = error instanceof Error ? error.message : String(error);

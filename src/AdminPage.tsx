@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import SiteHeader from './components/SiteHeader';
 import BorderGlow from './components/BorderGlow';
 import { useTheme } from './lib/useTheme';
+import { withBase, resolveAsset } from './lib/base';
 import { supabase as supabaseRef } from './lib/supabase';
 import {
   fetchAdminTeams,
@@ -277,7 +278,7 @@ function TeamsTab({ notify }: { notify: (m: string) => void }) {
     if (!error) reload();
   };
 
-  const empty: AdminTeam = { id: '', name: '', icon: '', code: '', icon_url: '/D2P/teams/', theme: '', owner: '', captain: '', champion: false, sort_order: teams.length + 1 };
+  const empty: AdminTeam = { id: '', name: '', icon: '', code: '', icon_url: withBase('/teams/'), theme: '', owner: '', captain: '', champion: false, sort_order: teams.length + 1 };
 
   return (
     <div className="admin-panel">
@@ -312,7 +313,7 @@ function TeamsTab({ notify }: { notify: (m: string) => void }) {
       <div className="admin-table">
         {teams.map((team) => (
           <div className="admin-row" key={team.id}>
-            <img src={team.icon_url} alt="" className="admin-thumb" />
+            <img src={resolveAsset(team.icon_url)} alt="" className="admin-thumb" />
             <div className="admin-row-main">
               <b>{team.name}</b>
               <span>{team.code} · {team.theme} · owner: {team.owner || 'TBD'} · captain: {team.captain || 'TBD'}{team.champion ? ' · ★' : ''}</span>
