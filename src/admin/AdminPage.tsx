@@ -7,7 +7,7 @@ import { Plus, Pencil, Trash2, Loader2, Crown, Users2, Shield, GripVertical, Pri
 import AdminTopbar from '@/admin/AdminTopbar';
 import BorderGlow from '@/components/BorderGlow';
 import { supabase as supabaseRef } from '@/lib/supabase';
-import { withBase, resolveAsset } from '@/lib/base';
+import { resolveAsset } from '@/lib/base';
 import { useTheme } from '@/lib/useTheme';
 import { Toaster } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
