@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { hasSupabaseConfig } from './env';
-import { fetchRecentPlayers, fetchRegistrationsCount, fetchSiteSettings, fetchTeams, fetchPlayerCards } from './lib/site';
-import type { RecentPlayer, PlayerCard } from './lib/site';
-import { useTheme } from './lib/useTheme';
-import ElectricBorder from './components/ElectricBorder';
-import Magnet from './components/Magnet';
-import Reveal from './components/Reveal';
-import SiteHeader from './components/SiteHeader';
+import { hasSupabaseConfig } from '@/env';
+import { fetchRecentPlayers, fetchRegistrationsCount, fetchSiteSettings, fetchTeams, fetchPlayerCards } from '@/lib/site';
+import type { RecentPlayer, PlayerCard } from '@/lib/site';
+import { useTheme } from '@/lib/useTheme';
+import ElectricBorder from '@/components/ElectricBorder';
+import Magnet from '@/components/Magnet';
+import Reveal from '@/components/Reveal';
+import SiteHeader from '@/components/SiteHeader';
 
 const steps = [
   ['✎', 'REGISTER', 'Sign up and create your player profile.'],

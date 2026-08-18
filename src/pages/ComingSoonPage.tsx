@@ -1,5 +1,5 @@
-import SiteHeader from './components/SiteHeader';
-import { useTheme } from './lib/useTheme';
+import SiteHeader from '@/components/SiteHeader';
+import { useTheme } from '@/lib/useTheme';
 
 type ComingSoonPageProps = {
   eyebrow: string;

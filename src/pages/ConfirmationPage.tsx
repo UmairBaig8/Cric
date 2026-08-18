@@ -1,5 +1,5 @@
-import { useTheme } from './lib/useTheme';
-import SiteHeader from './components/SiteHeader';
+import { useTheme } from '@/lib/useTheme';
+import SiteHeader from '@/components/SiteHeader';
 
 export default function ConfirmationPage() {
   const { dark, toggleTheme } = useTheme();

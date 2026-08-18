@@ -1,10 +1,14 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { registerPlayer, checkEmployeeExists } from './lib/registrations';
-import { useTheme } from './lib/useTheme';
-import SiteHeader from './components/SiteHeader';
-import Stepper from './components/Stepper';
-import BorderGlow from './components/BorderGlow';
-import type { RegistrationInput } from './types';
+import { useEffect, useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { registerPlayer, checkEmployeeExists } from '@/lib/registrations';
+import { fetchSiteSettings } from '@/lib/site';
+import { useTheme } from '@/lib/useTheme';
+import SiteHeader from '@/components/SiteHeader';
+import Stepper from '@/components/Stepper';
+import BorderGlow from '@/components/BorderGlow';
+import type { RegistrationInput } from '@/types';
 
 const initialForm: RegistrationInput = {
   name: '', email: '', employee_id: '', gender: 'Male', location: 'CZ', dpl_played: false, self_rating: 3,
@@ -13,81 +17,86 @@ const initialForm: RegistrationInput = {
 };
 
 type EmpStatus = 'idle' | 'checking' | 'free' | 'taken';
-type FieldName = keyof RegistrationInput | 'photo';
-type Errors = Partial<Record<FieldName, string>>;
-type Touched = Partial<Record<FieldName, boolean>>;
+type PhotoField = 'photo';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const EMP_ID_RE = /^\d{5,9}$/;
+const NAME_RE = /^[a-zA-Z\u00C0-\u024F][a-zA-Z\u00C0-\u024F\s.'-]*$/;
 const PHOTO_MAX_MB = 4;
 const PHOTO_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
-function validateField(field: FieldName, value: string | File | null, empStatus: EmpStatus): string {
-  switch (field) {
-    case 'name': {
-      const name = String(value ?? '').trim();
-      if (!name) return 'Full name is required.';
-      if (name.length < 2) return 'Name must be at least 2 characters.';
-      if (!/^[a-zA-Z\u00C0-\u024F][a-zA-Z\u00C0-\u024F\s.'-]*$/.test(name)) return 'Name can only contain letters, spaces, dots and hyphens.';
-      return '';
-    }
-    case 'email': {
-      const email = String(value ?? '').trim();
-      if (!email) return 'Work email is required.';
-      if (!EMAIL_RE.test(email)) return 'Enter a valid email address (e.g. you@company.com).';
-      return '';
-    }
-    case 'employee_id': {
-      const id = String(value ?? '').trim();
-      if (!id) return 'Employee ID is required.';
-      if (!EMP_ID_RE.test(id)) return 'Employee ID must be a 5–9 digit number.';
-      if (empStatus === 'taken') return 'This employee ID is already registered.';
-      if (empStatus === 'checking') return 'Checking employee ID…';
-      return '';
-    }
-    case 'gender':
-    case 'location':
-    case 'player_type':
-    case 'batting_style':
-    case 'bowling_style':
-    case 'bowling_arm':
-    case 'availability':
-    case 'self_rating':
-      if (!value) return 'Select an option.';
-      return '';
-    case 'photo': {
-      if (!value) return '';
-      const file = value as File;
-      if (!PHOTO_TYPES.includes(file.type)) return 'Only JPG, PNG or WEBP images are allowed.';
-      if (file.size > PHOTO_MAX_MB * 1024 * 1024) return `Photo must be under ${PHOTO_MAX_MB} MB.`;
-      return '';
-    }
-    default:
-      return '';
-  }
-}
+const STEP_FIELDS: Record<number, FormKey[]> = {
+  0: ['employee_id', 'email', 'name'],
+  1: ['player_type', 'batting_style', 'bowling_style', 'bowling_arm', 'availability'],
+  2: [],
+  3: [],
+};
+
+type FormKey = 'employee_id' | 'email' | 'name' | 'gender' | 'location' | 'player_type' | 'batting_style' | 'bowling_style' | 'bowling_arm' | 'availability' | 'dpl_played' | 'self_rating';
+
+const photoSchema = z
+  .instanceof(File)
+  .refine((file) => PHOTO_TYPES.includes(file.type), 'Only JPG, PNG or WEBP images are allowed.')
+  .refine((file) => file.size <= PHOTO_MAX_MB * 1024 * 1024, `Photo must be under ${PHOTO_MAX_MB} MB.`);
 
 export default function RegisterPage() {
   const { dark, toggleTheme } = useTheme();
-  const [form, setForm] = useState<RegistrationInput>(initialForm);
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState('');
+  const [photoError, setPhotoError] = useState('');
   const [message, setMessage] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [empStatus, setEmpStatus] = useState<EmpStatus>('idle');
-  const [errors, setErrors] = useState<Errors>({});
-  const [touched, setTouched] = useState<Touched>({});
+
+  const rules = useMemo(
+    () => ({
+      employee_id: z
+        .string()
+        .min(1, 'Employee ID is required.')
+        .regex(EMP_ID_RE, 'Employee ID must be a 5–9 digit number.')
+        .refine((id) => empStatus !== 'checking' || !EMP_ID_RE.test(id), 'Checking employee ID…')
+        .refine((id) => empStatus !== 'taken' || !EMP_ID_RE.test(id), 'This employee ID is already registered.'),
+      email: z
+        .string()
+        .min(1, 'Work email is required.')
+        .regex(EMAIL_RE, 'Enter a valid email address (e.g. you@company.com).'),
+      name: z
+        .string()
+        .min(1, 'Full name is required.')
+        .min(2, 'Name must be at least 2 characters.')
+        .regex(NAME_RE, 'Name can only contain letters, spaces, dots and hyphens.'),
+      gender: z.enum(['Male', 'Female'], { error: 'Select an option.' }),
+      location: z.string().min(1, 'Select an option.'),
+      player_type: z.string().min(1, 'Select an option.'),
+      batting_style: z.string().min(1, 'Select an option.'),
+      bowling_style: z.string().min(1, 'Select an option.'),
+      bowling_arm: z.string().min(1, 'Select an option.'),
+      availability: z.string().min(1, 'Select an option.'),
+      dpl_played: z.boolean(),
+      self_rating: z.number().min(1, 'Select an option.').max(5),
+    }),
+    [empStatus]
+  );
+
+  const formSchema = z.object(rules);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    mode: 'onTouched',
+    defaultValues: initialForm,
+  });
+  const { errors, touchedFields } = form.formState;
 
   useEffect(() => {
     let cancelled = false;
-    const id = form.employee_id.trim();
-    if (!EMP_ID_RE.test(id)) {
+    const id = form.watch('employee_id');
+    if (!EMP_ID_RE.test(id.trim())) {
       setEmpStatus('idle');
       return;
     }
     setEmpStatus('checking');
     const timer = window.setTimeout(() => {
-      checkEmployeeExists(id)
+      checkEmployeeExists(id.trim())
         .then((exists) => {
           if (!cancelled) setEmpStatus(exists ? 'taken' : 'free');
         })
@@ -99,69 +108,54 @@ export default function RegisterPage() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [form.employee_id]);
+  }, [form]);
 
-  function fieldValue(field: FieldName): string | File | null {
-    if (field === 'photo') return photo;
-    const value = form[field as keyof RegistrationInput];
-    return typeof value === 'string' ? value : String(value ?? '');
-  }
-
-  function fieldError(field: FieldName): string {
-    if (!touched[field]) return '';
-    if (field === 'employee_id' && errors.employee_id && errors.employee_id === 'Checking employee ID…') return '';
-    return errors[field] ?? '';
-  }
-
-  function setField(field: keyof RegistrationInput, value: string | boolean | number) {
-    setForm((prev) => ({ ...prev, [field]: value as never }));
-    setErrors((prev) => ({ ...prev, [field]: validateField(field, String(value ?? ''), empStatus) }));
-  }
-
-  function blurField(field: FieldName) {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-    setErrors((prev) => ({ ...prev, [field]: validateField(field, fieldValue(field), empStatus) }));
-  }
-
-  function stepFields(stepIndex: number): FieldName[] {
-    if (stepIndex === 0) return ['employee_id', 'email', 'name'];
-    if (stepIndex === 1) return ['player_type', 'batting_style', 'bowling_style', 'bowling_arm', 'availability'];
-    return [];
-  }
+  useEffect(() => {
+    form.trigger('employee_id');
+  }, [empStatus, form]);
 
   function isStepAllowed(stepIndex: number): boolean {
-    return stepFields(stepIndex).every((field) => !validateField(field, fieldValue(field), empStatus));
+    if (stepIndex === 2 && !photo) return false;
+    const fields = STEP_FIELDS[stepIndex];
+    if (!fields.length) return true;
+    const values = form.getValues();
+    const partial = Object.fromEntries(fields.map((field) => [field, values[field]]));
+    return z.object(Object.fromEntries(fields.map((field) => [field, rules[field]]))).safeParse(partial).success;
   }
 
   function selectPhoto(file: File | null) {
-    if (file) {
-      const err = validateField('photo', file, empStatus);
-      if (err) {
-        setErrors((prev) => ({ ...prev, photo: err }));
-        setTouched((prev) => ({ ...prev, photo: true }));
-        return;
-      }
+    if (!file) {
+      setPhoto(null);
+      setPhotoPreview('');
+      setPhotoError('Profile photo is required.');
+      return;
+    }
+    const result = photoSchema.safeParse(file);
+    if (!result.success) {
+      setPhotoError(result.error.issues[0]?.message ?? 'Invalid photo.');
+      setPhoto(null);
+      setPhotoPreview('');
+      return;
     }
     setPhoto(file);
-    setPhotoPreview(file ? URL.createObjectURL(file) : '');
-    setErrors((prev) => ({ ...prev, photo: '' }));
+    setPhotoPreview(URL.createObjectURL(file));
+    setPhotoError('');
   }
 
-  async function submit(event?: FormEvent<HTMLFormElement>) {
-    if (event) event.preventDefault();
-    setTouched({ employee_id: true, name: true, email: true });
-    const fields: FieldName[] = ['employee_id', 'name', 'email', 'gender', 'location', 'player_type', 'batting_style', 'bowling_style', 'bowling_arm', 'availability', 'self_rating', 'photo'];
-    const nextErrors: Errors = {};
-    for (const field of fields) nextErrors[field] = validateField(field, fieldValue(field), empStatus);
-    setErrors(nextErrors);
-    if (Object.values(nextErrors).some((err) => err)) {
+  async function submit(values: z.infer<typeof formSchema>) {
+    if (!photo) {
+      setPhotoError('Profile photo is required.');
+      setMessage({ kind: 'error', text: 'Please fix the highlighted fields before submitting.' });
+      return;
+    }
+    if (photoError) {
       setMessage({ kind: 'error', text: 'Please fix the highlighted fields before submitting.' });
       return;
     }
     setSubmitting(true);
     setMessage(null);
     try {
-      const trimmed = { ...form, name: form.name.trim(), email: form.email.trim().toLowerCase(), employee_id: form.employee_id.trim() };
+      const trimmed = { ...values, name: values.name.trim(), email: values.email.trim().toLowerCase(), employee_id: values.employee_id.trim() } as RegistrationInput;
       const result = await registerPlayer(trimmed, photo ?? undefined);
       if (result.demo) {
         setMessage({ kind: 'success', text: 'Demo registration saved locally. Connect Supabase to go live.' });
@@ -182,17 +176,82 @@ export default function RegisterPage() {
     }
   }
 
-  const initials = form.name.trim().split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase() || 'YOU';
+  const initials = form.watch('name').trim().split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase() || 'YOU';
 
   const empHint = empStatus === 'checking' ? <em className="reg-hint checking">Checking…</em>
-    : empStatus === 'free' && EMP_ID_RE.test(form.employee_id.trim()) ? <em className="reg-hint ok">✓ Available</em>
+    : empStatus === 'free' && EMP_ID_RE.test(form.watch('employee_id').trim()) ? <em className="reg-hint ok">✓ Available</em>
     : empStatus === 'taken' ? <em className="reg-hint warn">✓ Already registered</em>
     : null;
 
-  const fieldProps = (field: FieldName) => ({
-    className: `reg-field${fieldError(field) ? ' has-error' : ''}${touched[field] && !fieldError(field) ? ' is-valid' : ''}`,
+  const fieldError = (field: FormKey | PhotoField): string => {
+    if (field === 'photo') return photoError;
+    const err = errors[field as FormKey]?.message ?? '';
+    return err === 'Checking employee ID…' ? '' : err;
+  };
+
+  const fieldProps = (field: FormKey | PhotoField) => ({
+    className: `reg-field${fieldError(field) ? ' has-error' : ''}${touchedFields[field as FormKey] && !fieldError(field) ? ' is-valid' : ''}`,
     'data-error': fieldError(field),
   });
+
+  const reg = form.register;
+
+  const [gate, setGate] = useState<'checking' | 'open' | 'not-yet' | 'closed'>('checking');
+
+  useEffect(() => {
+    let alive = true;
+    fetchSiteSettings()
+      .then((settings) => {
+        if (!alive) return;
+        if (!settings?.registration_deadline) {
+          setGate('open');
+          return;
+        }
+        const now = Date.now();
+        const deadline = new Date(settings.registration_deadline).getTime();
+        const open = settings.registration_open ? new Date(settings.registration_open).getTime() : null;
+        if (open && now < open) setGate('not-yet');
+        else if (now > deadline) setGate('closed');
+        else setGate('open');
+      })
+      .catch(() => {
+        if (alive) setGate('open');
+      });
+    return () => { alive = false; };
+  }, []);
+
+  if (gate === 'checking') {
+    return (
+      <div className={dark ? 'app dark register-page' : 'app register-page'}>
+        <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
+        <main className="register-main shell">
+          <div className="registration-card registration-form py-16 text-center text-sm font-semibold text-muted-foreground">CHECKING REGISTRATION WINDOW…</div>
+        </main>
+      </div>
+    );
+  }
+
+  if (gate !== 'open') {
+    const closedAt = gate === 'closed';
+    return (
+      <div className={dark ? 'app dark register-page' : 'app register-page'}>
+        <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
+        <main className="register-main shell">
+          <div className="registration-card registration-form py-14 text-center">
+            <div className="text-4xl">{closedAt ? '🏏' : '⏳'}</div>
+            <h2 className="reg-title mt-3 font-display text-2xl font-black italic tracking-wide">
+              {closedAt ? 'REGISTRATIONS ARE CLOSED' : 'REGISTRATIONS OPEN SOON'}
+            </h2>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+              {closedAt
+                ? 'The registration window has ended. If you missed it, reach out to your league admin.'
+                : 'The registration window hasn\u2019t opened yet — check back shortly.'}
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className={dark ? 'app dark register-page' : 'app register-page'}>
@@ -209,7 +268,7 @@ export default function RegisterPage() {
           borderRadius={24}
           animated
         >
-          <form className="registration-form registration-card" onSubmit={submit} noValidate>
+          <form className="registration-form registration-card" onSubmit={form.handleSubmit(submit)} noValidate>
           <div className="reg-top">
             <div className="reg-title">
               <span className="reg-eyebrow">DPL 2026 · PLAYER REGISTRATION</span>
@@ -221,7 +280,7 @@ export default function RegisterPage() {
 
           <Stepper
             steps={['PERSONAL', 'CRICKET', 'PHOTO', 'CONFIRM']}
-            onFinalStepCompleted={() => submit()}
+            onFinalStepCompleted={() => form.handleSubmit(submit)()}
             backButtonText="Back"
             nextButtonText="Continue"
             completeButtonText="🏏 CREATE MY PLAYER PROFILE"
@@ -242,10 +301,12 @@ export default function RegisterPage() {
                       title="Enter your 5–9 digit employee ID"
                       maxLength={9}
                       placeholder="123456789"
-                      value={form.employee_id}
                       aria-invalid={Boolean(fieldError('employee_id'))}
-                      onChange={(event) => setField('employee_id', event.target.value.replace(/[^0-9]/g, ''))}
-                      onBlur={() => blurField('employee_id')}
+                      {...reg('employee_id', {
+                        onChange: (event) => {
+                          event.target.value = event.target.value.replace(/[^0-9]/g, '');
+                        },
+                      })}
                     />
                     {empHint}
                   </div>
@@ -261,10 +322,8 @@ export default function RegisterPage() {
                       required
                       type="email"
                       placeholder="you@company.com"
-                      value={form.email}
                       aria-invalid={Boolean(fieldError('email'))}
-                      onChange={(event) => setField('email', event.target.value)}
-                      onBlur={() => blurField('email')}
+                      {...reg('email')}
                     />
                   </div>
                   {fieldError('email') ? <small className="reg-error">{fieldError('email')}</small> : null}
@@ -279,10 +338,8 @@ export default function RegisterPage() {
                       required
                       minLength={2}
                       placeholder="e.g. Virat Kohli"
-                      value={form.name}
                       aria-invalid={Boolean(fieldError('name'))}
-                      onChange={(event) => setField('name', event.target.value)}
-                      onBlur={() => blurField('name')}
+                      {...reg('name')}
                     />
                   </div>
                   {fieldError('name') ? <small className="reg-error">{fieldError('name')}</small> : null}
@@ -291,7 +348,7 @@ export default function RegisterPage() {
                 <div {...fieldProps('location')}>
                   <label htmlFor="location">Location <em className="req-star">*</em></label>
                   <div className="reg-select-wrap">
-                    <select id="location" required value={form.location} aria-invalid={Boolean(fieldError('location'))} onChange={(event) => setField('location', event.target.value)} onBlur={() => blurField('location')}>
+                    <select id="location" required aria-invalid={Boolean(fieldError('location'))} {...reg('location')}>
                       <option value="CZ">CZ</option>
                       <option value="SP">SP</option>
                       <option value="Other">Other</option>
@@ -306,9 +363,9 @@ export default function RegisterPage() {
                     {(['Male', 'Female'] as const).map((option) => (
                       <button
                         type="button"
-                        className={form.gender === option ? 'on' : ''}
+                        className={form.watch('gender') === option ? 'on' : ''}
                         key={option}
-                        onClick={() => setField('gender', option)}
+                        onClick={() => form.setValue('gender', option, { shouldValidate: true })}
                       >
                         {option}
                       </button>
@@ -323,25 +380,25 @@ export default function RegisterPage() {
                 <div {...fieldProps('player_type')}>
                   <label htmlFor="player_type">Player type</label>
                   <div className="reg-select-wrap">
-                    <select id="player_type" required value={form.player_type} aria-invalid={Boolean(fieldError('player_type'))} onChange={(event) => setField('player_type', event.target.value)} onBlur={() => blurField('player_type')}><option>Batter</option><option>Bowler</option><option>All-rounder</option><option>Wicketkeeper-batter</option></select>
+                    <select id="player_type" required aria-invalid={Boolean(fieldError('player_type'))} {...reg('player_type')}><option>Batter</option><option>Bowler</option><option>All-rounder</option><option>Wicketkeeper-batter</option></select>
                   </div>
                 </div>
                 <div {...fieldProps('batting_style')}>
                   <label htmlFor="batting_style">Batting style</label>
                   <div className="reg-select-wrap">
-                    <select id="batting_style" required value={form.batting_style} aria-invalid={Boolean(fieldError('batting_style'))} onChange={(event) => setField('batting_style', event.target.value)} onBlur={() => blurField('batting_style')}><option>Right-hand batter</option><option>Left-hand batter</option></select>
+                    <select id="batting_style" required aria-invalid={Boolean(fieldError('batting_style'))} {...reg('batting_style')}><option>Right-hand batter</option><option>Left-hand batter</option></select>
                   </div>
                 </div>
                 <div {...fieldProps('bowling_style')}>
                   <label htmlFor="bowling_style">Bowling style</label>
                   <div className="reg-select-wrap">
-                    <select id="bowling_style" required value={form.bowling_style} aria-invalid={Boolean(fieldError('bowling_style'))} onChange={(event) => setField('bowling_style', event.target.value)} onBlur={() => blurField('bowling_style')}><option>Do not bowl</option><option>Right-arm pace</option><option>Left-arm pace</option><option>Right-arm spin</option><option>Left-arm spin</option></select>
+                    <select id="bowling_style" required aria-invalid={Boolean(fieldError('bowling_style'))} {...reg('bowling_style')}><option>Do not bowl</option><option>Right-arm pace</option><option>Left-arm pace</option><option>Right-arm spin</option><option>Left-arm spin</option></select>
                   </div>
                 </div>
                 <div {...fieldProps('bowling_arm')}>
                   <label htmlFor="bowling_arm">Bowling arm</label>
                   <div className="reg-select-wrap">
-                    <select id="bowling_arm" required value={form.bowling_arm} aria-invalid={Boolean(fieldError('bowling_arm'))} onChange={(event) => setField('bowling_arm', event.target.value)} onBlur={() => blurField('bowling_arm')}><option>Not applicable</option><option>Right arm</option><option>Left arm</option></select>
+                    <select id="bowling_arm" required aria-invalid={Boolean(fieldError('bowling_arm'))} {...reg('bowling_arm')}><option>Not applicable</option><option>Right arm</option><option>Left arm</option></select>
                   </div>
                 </div>
                 <div className="reg-field reg-gender">
@@ -350,9 +407,9 @@ export default function RegisterPage() {
                     {([['Yes', true], ['No', false]] as const).map(([label, value]) => (
                       <button
                         type="button"
-                        className={form.dpl_played === value ? 'on' : ''}
+                        className={form.watch('dpl_played') === value ? 'on' : ''}
                         key={label}
-                        onClick={() => setField('dpl_played', value)}
+                        onClick={() => form.setValue('dpl_played', value, { shouldValidate: true })}
                       >
                         {label}
                       </button>
@@ -366,10 +423,10 @@ export default function RegisterPage() {
                       <button
                         type="button"
                         role="radio"
-                        aria-checked={form.self_rating === star}
-                        className={star <= form.self_rating ? 'on' : ''}
+                        aria-checked={form.watch('self_rating') === star}
+                        className={star <= form.watch('self_rating') ? 'on' : ''}
                         key={star}
-                        onClick={() => setField('self_rating', star)}
+                        onClick={() => form.setValue('self_rating', star, { shouldValidate: true })}
                       >
                         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.6 6.6 7 .6-5.3 4.6 1.6 6.9L12 17.3l-5.9 3.4 1.6-6.9L2.4 9.2l7-.6z"/></svg>
                       </button>
@@ -379,34 +436,34 @@ export default function RegisterPage() {
                 <div {...fieldProps('availability')}>
                   <label htmlFor="availability">Match availability</label>
                   <div className="reg-select-wrap">
-                    <select id="availability" required value={form.availability} aria-invalid={Boolean(fieldError('availability'))} onChange={(event) => setField('availability', event.target.value)} onBlur={() => blurField('availability')}><option>Available for all matches</option><option>Available for most matches</option><option>Need schedule confirmation</option></select>
+                    <select id="availability" required aria-invalid={Boolean(fieldError('availability'))} {...reg('availability')}><option>Available for all matches</option><option>Available for most matches</option><option>Need schedule confirmation</option></select>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="stepper-step-body">
-              <label className={['reg-photo reg-player-card', fieldError('photo') ? 'has-error' : '', touched.photo && !fieldError('photo') ? 'is-valid' : ''].filter(Boolean).join(' ')}>
+              <label className={['reg-photo reg-player-card', fieldError('photo') ? 'has-error' : '', !fieldError('photo') && photo ? 'is-valid' : ''].filter(Boolean).join(' ')}>
                 <div className="reg-pc-side">
                   <div className="reg-pc-photo">
                     {photoPreview ? <img alt="Preview" src={photoPreview} /> : <span className="reg-pc-fallback"><i>{initials}</i></span>}
                     <span className="reg-pc-grad" />
-                    {!photoPreview ? <span className="reg-pc-hint">📷 ADD PHOTO</span> : null}
-                    <span className="reg-pc-role">{form.player_type}</span>
+                    {!photoPreview ? <span className="reg-pc-hint">📷 ADD PHOTO <em className="req-star">*</em></span> : null}
+                    <span className="reg-pc-role">{form.watch('player_type')}</span>
                   </div>
                   <div className="reg-pc-body">
                     <div className="reg-pc-top">
                       <span className="reg-pc-league">DPL <b>2026</b></span>
-                      <span className="reg-pc-no">#{form.employee_id.trim() || '—'}</span>
+                      <span className="reg-pc-no">#{form.watch('employee_id').trim() || '—'}</span>
                     </div>
-                    <strong className="reg-pc-name">{form.name.trim() || 'Your player card'}</strong>
-                    <span className="reg-pc-squad">{form.location} · {form.gender}</span>
+                    <strong className="reg-pc-name">{form.watch('name').trim() || 'Your player card'}</strong>
+                    <span className="reg-pc-squad">{form.watch('location')} · {form.watch('gender')}</span>
                     <div className="reg-pc-tags">
-                      <span className={form.dpl_played ? 'reg-pc-tag-dpl on' : 'reg-pc-tag-dpl'}>{form.dpl_played ? 'DPL VET' : 'DPL ROOKIE'}</span>
+                      <span className={form.watch('dpl_played') ? 'reg-pc-tag-dpl on' : 'reg-pc-tag-dpl'}>{form.watch('dpl_played') ? 'DPL VET' : 'DPL ROOKIE'}</span>
                     </div>
                     <div className="reg-pc-styles">
-                      <span>{form.batting_style}</span>
-                      <span>{form.bowling_style}</span>
+                      <span>{form.watch('batting_style')}</span>
+                      <span>{form.watch('bowling_style')}</span>
                     </div>
                   </div>
                 </div>
@@ -424,26 +481,26 @@ export default function RegisterPage() {
                     <div className="reg-pc-photo">
                       {photoPreview ? <img alt="Preview" src={photoPreview} /> : <span className="reg-pc-fallback"><i>{initials}</i></span>}
                       <span className="reg-pc-grad" />
-                      <span className="reg-pc-role">{form.player_type}</span>
+                      <span className="reg-pc-role">{form.watch('player_type')}</span>
                     </div>
                     <div className="reg-pc-body">
                       <div className="reg-pc-top">
                         <span className="reg-pc-league">DPL <b>2026</b></span>
-                        <span className="reg-pc-no">#{form.employee_id.trim() || '—'}</span>
+                        <span className="reg-pc-no">#{form.watch('employee_id').trim() || '—'}</span>
                       </div>
-                      <strong className="reg-pc-name">{form.name.trim() || 'Your player card'}</strong>
-                      <span className="reg-pc-squad">{form.location} · {form.gender}</span>
+                      <strong className="reg-pc-name">{form.watch('name').trim() || 'Your player card'}</strong>
+                      <span className="reg-pc-squad">{form.watch('location')} · {form.watch('gender')}</span>
                       <div className="reg-pc-tags">
-                        <span className={form.dpl_played ? 'reg-pc-tag-dpl on' : 'reg-pc-tag-dpl'}>{form.dpl_played ? 'DPL VET' : 'DPL ROOKIE'}</span>
+                        <span className={form.watch('dpl_played') ? 'reg-pc-tag-dpl on' : 'reg-pc-tag-dpl'}>{form.watch('dpl_played') ? 'DPL VET' : 'DPL ROOKIE'}</span>
                       </div>
                       <div className="reg-pc-styles">
-                        <span>{form.batting_style}</span>
-                        <span>{form.bowling_style}</span>
+                        <span>{form.watch('batting_style')}</span>
+                        <span>{form.watch('bowling_style')}</span>
                       </div>
                       <div className="reg-confirm-extra">
-                        <div className="reg-confirm-extra-row"><span>EMAIL</span><b>{form.email.trim() || '—'}</b></div>
-                        <div className="reg-confirm-extra-row"><span>SELF RATING</span><b>{'★'.repeat(form.self_rating)}{'☆'.repeat(5 - form.self_rating)}</b></div>
-                        <div className="reg-confirm-extra-row"><span>AVAILABILITY</span><b>{form.availability}</b></div>
+                        <div className="reg-confirm-extra-row"><span>EMAIL</span><b>{form.watch('email').trim() || '—'}</b></div>
+                        <div className="reg-confirm-extra-row"><span>SELF RATING</span><b>{'★'.repeat(form.watch('self_rating'))}{'☆'.repeat(5 - form.watch('self_rating'))}</b></div>
+                        <div className="reg-confirm-extra-row"><span>AVAILABILITY</span><b>{form.watch('availability')}</b></div>
                       </div>
                     </div>
                   </div>

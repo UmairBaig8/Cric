@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useTheme } from './lib/useTheme';
-import SiteHeader from './components/SiteHeader';
-import DepthCarousel from './components/DepthCarousel';
-import SpotlightCard from './components/SpotlightCard';
-import { fetchAuctionPlayers, type AuctionPlayer } from './lib/site';
+import { useTheme } from '@/lib/useTheme';
+import SiteHeader from '@/components/SiteHeader';
+import DepthCarousel from '@/components/DepthCarousel';
+import SpotlightCard from '@/components/SpotlightCard';
+import { fetchAuctionPlayers, type AuctionPlayer } from '@/lib/site';
 
 const availabilityShort: Record<string, string> = {
   'Available for all matches': 'ALL MATCHES',

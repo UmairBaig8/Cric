@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import SiteHeader from './components/SiteHeader';
-import { useTheme } from './lib/useTheme';
-import { fetchTeamsList, type TeamRow } from './lib/site';
+import SiteHeader from '@/components/SiteHeader';
+import { useTheme } from '@/lib/useTheme';
+import { fetchTeamsList, type TeamRow } from '@/lib/site';
 
 export default function TeamsPage() {
   const { dark, toggleTheme } = useTheme();

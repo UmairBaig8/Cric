@@ -2,18 +2,19 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import App from './App';
-import RegisterPage from './RegisterPage';
-import ConfirmationPage from './ConfirmationPage';
-import AuctionPage from './AuctionPage';
-import TeamsPage from './TeamsPage';
-import TeamPage from './TeamPage';
-import AdminPage from './AdminPage';
-import ComingSoonPage from './ComingSoonPage';
+import RegisterPage from '@/pages/RegisterPage';
+import ConfirmationPage from '@/pages/ConfirmationPage';
+import AuctionPage from '@/pages/AuctionPage';
+import TeamsPage from '@/pages/TeamsPage';
+import TeamPage from '@/pages/TeamPage';
+import AdminPage from '@/admin/AdminPage';
+import ComingSoonPage from '@/pages/ComingSoonPage';
+import './index.css';
 import './styles.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter basename="/D2P">
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/register" element={<RegisterPage />} />
