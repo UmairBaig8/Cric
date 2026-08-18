@@ -1,6 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { registerPlayer, checkEmployeeExists } from './lib/registrations';
-import { sendConfirmationEmail } from './lib/email';
 import { useTheme } from './lib/useTheme';
 import SiteHeader from './components/SiteHeader';
 import Stepper from './components/Stepper';
@@ -168,7 +167,6 @@ export default function RegisterPage() {
         setMessage({ kind: 'success', text: 'Demo registration saved locally. Connect Supabase to go live.' });
         setSubmitting(false);
       } else {
-        void sendConfirmationEmail(trimmed.name, trimmed.email);
         window.location.href = `/D2P/confirmation?name=${encodeURIComponent(trimmed.name)}&email=${encodeURIComponent(trimmed.email)}`;
       }
     } catch (error) {
