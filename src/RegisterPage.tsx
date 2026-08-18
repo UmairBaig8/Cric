@@ -57,7 +57,7 @@ function validateField(field: FieldName, value: string | File | null, empStatus:
       if (!value) return 'Select an option.';
       return '';
     case 'photo': {
-      if (!value) return '';
+      if (!value) return 'Profile photo is required.';
       const file = value as File;
       if (!PHOTO_TYPES.includes(file.type)) return 'Only JPG, PNG or WEBP images are allowed.';
       if (file.size > PHOTO_MAX_MB * 1024 * 1024) return `Photo must be under ${PHOTO_MAX_MB} MB.`;
@@ -127,6 +127,7 @@ export default function RegisterPage() {
   function stepFields(stepIndex: number): FieldName[] {
     if (stepIndex === 0) return ['employee_id', 'email', 'name'];
     if (stepIndex === 1) return ['player_type', 'batting_style', 'bowling_style', 'bowling_arm', 'availability'];
+    if (stepIndex === 2) return ['photo'];
     return [];
   }
 
@@ -135,22 +136,29 @@ export default function RegisterPage() {
   }
 
   function selectPhoto(file: File | null) {
-    if (file) {
-      const err = validateField('photo', file, empStatus);
-      if (err) {
-        setErrors((prev) => ({ ...prev, photo: err }));
-        setTouched((prev) => ({ ...prev, photo: true }));
-        return;
-      }
+    setTouched((prev) => ({ ...prev, photo: true }));
+
+    if (!file) {
+      setPhoto(null);
+      setPhotoPreview('');
+      setErrors((prev) => ({ ...prev, photo: 'Profile photo is required.' }));
+      return;
     }
+
+    const err = validateField('photo', file, empStatus);
+    if (err) {
+      setErrors((prev) => ({ ...prev, photo: err }));
+      return;
+    }
+
     setPhoto(file);
-    setPhotoPreview(file ? URL.createObjectURL(file) : '');
+    setPhotoPreview(URL.createObjectURL(file));
     setErrors((prev) => ({ ...prev, photo: '' }));
   }
 
   async function submit(event?: FormEvent<HTMLFormElement>) {
     if (event) event.preventDefault();
-    setTouched({ employee_id: true, name: true, email: true });
+    setTouched({ employee_id: true, name: true, email: true, photo: true });
     const fields: FieldName[] = ['employee_id', 'name', 'email', 'gender', 'location', 'player_type', 'batting_style', 'bowling_style', 'bowling_arm', 'availability', 'self_rating', 'photo'];
     const nextErrors: Errors = {};
     for (const field of fields) nextErrors[field] = validateField(field, fieldValue(field), empStatus);
@@ -392,7 +400,7 @@ export default function RegisterPage() {
                   <div className="reg-pc-photo">
                     {photoPreview ? <img alt="Preview" src={photoPreview} /> : <span className="reg-pc-fallback"><i>{initials}</i></span>}
                     <span className="reg-pc-grad" />
-                    {!photoPreview ? <span className="reg-pc-hint">📷 ADD PHOTO</span> : null}
+                    {!photoPreview ? <span className="reg-pc-hint">📷 ADD PHOTO<em className="req-star">*</em></span> : null}
                     <span className="reg-pc-role">{form.player_type}</span>
                   </div>
                   <div className="reg-pc-body">
