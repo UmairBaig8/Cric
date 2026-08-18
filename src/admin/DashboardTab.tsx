@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { supabase as supabaseRef } from '@/lib/supabase';
 import { fetchAdminPlayers, fetchAdminTeams, type AdminPlayer, type AdminTeam } from '@/lib/site';
+import { resolveAsset } from '@/lib/base';
 import { toast } from 'sonner';
 
 function StatCard({ icon, label, value, sub, accent }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string; accent?: string }) {
@@ -339,7 +340,7 @@ export default function DashboardTab() {
             {teamsWithPlayers.map((team) => (
               <div key={team.id} className="flex items-center justify-between rounded-lg border px-4 py-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  {team.icon_url ? <img src={team.icon_url} alt="" className="h-10 w-8 rounded object-cover" /> : <div className="h-10 w-8 rounded bg-muted" />}
+                  {team.icon_url ? <img src={resolveAsset(team.icon_url)} alt="" className="h-10 w-8 rounded object-cover" /> : <div className="h-10 w-8 rounded bg-muted" />}
                   <div className="min-w-0">
                     <div className="truncate text-sm font-bold">{team.name}</div>
                     <div className="text-xs text-muted-foreground">{team.code} · {team.theme || '—'}</div>

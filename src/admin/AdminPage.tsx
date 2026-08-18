@@ -7,6 +7,7 @@ import { Plus, Pencil, Trash2, Loader2, Crown, Users2, Shield, GripVertical, Pri
 import AdminTopbar from '@/admin/AdminTopbar';
 import BorderGlow from '@/components/BorderGlow';
 import { supabase as supabaseRef } from '@/lib/supabase';
+import { withBase, resolveAsset } from '@/lib/base';
 import { useTheme } from '@/lib/useTheme';
 import { Toaster } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
@@ -603,7 +604,7 @@ function TeamsTab() {
             {teams.map((team) => (
               <TableRow key={team.id}>
                 <TableCell>
-                  {team.icon_url ? <img src={team.icon_url} alt="" className="h-12 w-9 rounded object-cover" /> : <div className="h-12 w-9 rounded bg-muted" />}
+                  {team.icon_url ? <img src={resolveAsset(team.icon_url)} alt="" className="h-12 w-9 rounded object-cover" /> : <div className="h-12 w-9 rounded bg-muted" />}
                 </TableCell>
                 <TableCell className="font-medium">{team.name}</TableCell>
                 <TableCell className="text-muted-foreground">
