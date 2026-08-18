@@ -3,4 +3,4 @@
   publish = "dist"
 
 [build.environment]
-  VITE_BASE = "/D2P/"
+  VITE_BASE = "/"
