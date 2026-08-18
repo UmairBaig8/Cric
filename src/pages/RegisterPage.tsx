@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { registerPlayer, checkEmployeeExists } from '@/lib/registrations';
-import { fetchSiteSettings } from '@/lib/site';
 import { useTheme } from '@/lib/useTheme';
 import SiteHeader from '@/components/SiteHeader';
 import Stepper from '@/components/Stepper';
@@ -195,63 +194,6 @@ export default function RegisterPage() {
   });
 
   const reg = form.register;
-
-  const [gate, setGate] = useState<'checking' | 'open' | 'not-yet' | 'closed'>('checking');
-
-  useEffect(() => {
-    let alive = true;
-    fetchSiteSettings()
-      .then((settings) => {
-        if (!alive) return;
-        if (!settings?.registration_deadline) {
-          setGate('open');
-          return;
-        }
-        const now = Date.now();
-        const deadline = new Date(settings.registration_deadline).getTime();
-        const open = settings.registration_open ? new Date(settings.registration_open).getTime() : null;
-        if (open && now < open) setGate('not-yet');
-        else if (now > deadline) setGate('closed');
-        else setGate('open');
-      })
-      .catch(() => {
-        if (alive) setGate('open');
-      });
-    return () => { alive = false; };
-  }, []);
-
-  if (gate === 'checking') {
-    return (
-      <div className={dark ? 'app dark register-page' : 'app register-page'}>
-        <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
-        <main className="register-main shell">
-          <div className="registration-card registration-form py-16 text-center text-sm font-semibold text-muted-foreground">CHECKING REGISTRATION WINDOW…</div>
-        </main>
-      </div>
-    );
-  }
-
-  if (gate !== 'open') {
-    const closedAt = gate === 'closed';
-    return (
-      <div className={dark ? 'app dark register-page' : 'app register-page'}>
-        <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
-        <main className="register-main shell">
-          <div className="registration-card registration-form py-14 text-center">
-            <div className="text-4xl">{closedAt ? '🏏' : '⏳'}</div>
-            <h2 className="reg-title mt-3 font-display text-2xl font-black italic tracking-wide">
-              {closedAt ? 'REGISTRATIONS ARE CLOSED' : 'REGISTRATIONS OPEN SOON'}
-            </h2>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
-              {closedAt
-                ? 'The registration window has ended. If you missed it, reach out to your league admin.'
-                : 'The registration window hasn\u2019t opened yet — check back shortly.'}
-            </p>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   return (
     <div className={dark ? 'app dark register-page' : 'app register-page'}>
