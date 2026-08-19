@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { joinPresence, trackPageView } from '@/lib/analytics';
+import { joinPresence, startSessionHeartbeat, trackPageView } from '@/lib/analytics';
 
 export default function AnalyticsTracker() {
   const location = useLocation();
@@ -9,7 +9,14 @@ export default function AnalyticsTracker() {
     trackPageView(location.pathname);
   }, [location.pathname]);
 
-  useEffect(() => joinPresence(), []);
+  useEffect(() => {
+    const stopPresence = joinPresence();
+    const stopHeartbeat = startSessionHeartbeat();
+    return () => {
+      stopPresence();
+      stopHeartbeat();
+    };
+  }, []);
 
   return null;
 }
