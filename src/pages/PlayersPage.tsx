@@ -9,7 +9,6 @@ import { fetchPlayersList, submitPlayerEdit, type PublicPlayer } from '@/lib/sit
 import { Toaster } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -143,6 +142,11 @@ export default function PlayersPage() {
       <Toaster theme={dark ? 'dark' : 'light'} position="bottom-center" richColors />
       <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
       <main className="players-main shell">
+        <header className="players-head">
+          <span className="eyebrow">DPL 2026 / SQUAD</span>
+          <h1>PLAYERS</h1>
+          <p>{filtered.length} PLAYERS</p>
+        </header>
         <div className="players-toolbar">
           <div className="relative min-w-56 flex-1">
             <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -166,7 +170,6 @@ export default function PlayersPage() {
               {areas.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Badge variant="secondary" className="px-3 py-1">{filtered.length} PLAYERS</Badge>
         </div>
 
         <section className="players-grid">

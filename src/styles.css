@@ -146,6 +146,13 @@
 .players-page footer{margin-top:auto;padding:25px;text-align:center;color:#7b8993;font-size:9px;border-top:1px solid rgba(20,45,70,.12)}
 .dark.players-page footer{color:#5b6f7e;border-top-color:#1c2b3a}
 .players-main{flex:1;width:min(1400px,92%);margin:0 auto;padding:44px 0 70px}
+.players-head{text-align:center;margin-bottom:26px}
+.players-head .eyebrow{color:#0f9bb0;letter-spacing:3px;font-size:12px;font-weight:800}
+.dark .players-head .eyebrow{color:#28dce8}
+.players-head h1{font:900 italic clamp(52px,7vw,84px)/.85 'Barlow Condensed';letter-spacing:-1px;margin:8px 0 6px;color:#071426}
+.dark .players-head h1{color:#eef5fb}
+.players-head p{font-size:11px;letter-spacing:2px;color:#7b8993}
+.dark .players-head p{color:#5b6f7e}
 .players-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:26px}
 .players-toolbar [data-slot=input],.players-toolbar [data-slot=select-trigger]{background:rgba(255,255,255,.92);border-color:rgba(20,45,70,.16);box-shadow:0 1px 3px rgba(20,45,70,.06);color:#0b1420;transition:border-color .15s ease,box-shadow .15s ease}
 .players-toolbar [data-slot=input]::placeholder{color:#8a9aa8}
