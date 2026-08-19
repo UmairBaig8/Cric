@@ -24,7 +24,7 @@ export default function ProfileCard({ avatarUrl, name, title, handle, status, fa
       <div className="player-card-top">
         <div className="player-card-id">
           <h3>{name}</h3>
-          <p>{title} · @{handle}</p>
+          <p className="player-card-sub"><span>{title}</span><span>@{handle}</span></p>
         </div>
         <button className="player-card-edit" type="button" onClick={onEdit} aria-label={`Edit ${name}`}>
           <Pencil className="size-3.5" /> EDIT
