@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Area, Bar, BarChart, ComposedChart, CartesianGrid, Cell, Line, Pie, PieChart, PolarAngleAxis, RadialBar, RadialBarChart, ReferenceLine, XAxis, YAxis } from 'recharts';
-import { Trophy, Users, ShieldCheck, Crown, Camera, RefreshCw, ClipboardCopy } from 'lucide-react';
+import { Trophy, Users, ShieldCheck, Crown, Camera, RefreshCw, ClipboardCopy, Activity, Eye, BarChart3 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { supabase as supabaseRef } from '@/lib/supabase';
+import { onOnlineCount } from '@/lib/analytics';
 import { fetchAdminPlayers, fetchAdminTeams, type AdminPlayer, type AdminTeam } from '@/lib/site';
 import { resolveAsset } from '@/lib/base';
 import { toast } from 'sonner';
@@ -223,6 +224,20 @@ export default function DashboardTab() {
   const [regOpen, setRegOpen] = useState<string | null>(null);
   const [regDeadline, setRegDeadline] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [online, setOnline] = useState<number | null>(null);
+  const [views, setViews] = useState<{ today: number; total: number; paths: { path: string; views: number }[] } | null>(null);
+
+  useEffect(() => onOnlineCount(setOnline), []);
+
+  useEffect(() => {
+    let alive = true;
+    supabaseRef!
+      .rpc('admin_views_summary')
+      .then(({ data, error }) => {
+        if (!error && data && alive) setViews(data[0]);
+      }, () => undefined);
+    return () => { alive = false; };
+  }, [refreshKey]);
 
   useEffect(() => {
     let alive = true;
@@ -309,6 +324,27 @@ export default function DashboardTab() {
         <StatCard icon={<ShieldCheck />} label="TEAM ASSIGNED" value={`${assigned}/${registered}`} sub={`${unassigned} unassigned`} accent="bg-purple-500/10 text-purple-600 dark:text-purple-400" />
         <StatCard icon={<Crown />} label="DPL VETS" value={vets} sub={`Avg self-rating ${avgRating}★`} accent="bg-pink-500/10 text-pink-600 dark:text-pink-400" />
         <StatCard icon={<Camera />} label="PHOTOS" value={`${withPhoto}/${registered}`} sub={`${missingPhoto} missing`} accent="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard icon={<Activity />} label="ONLINE NOW" value={online ?? '…'} sub="live tabs" accent="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" />
+        <StatCard icon={<Eye />} label="VIEWS TODAY" value={views?.today ?? '…'} sub="unique sessions" accent="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400" />
+        <StatCard icon={<BarChart3 />} label="TOTAL VIEWS" value={views?.total ?? '…'} sub="all time" accent="bg-blue-500/10 text-blue-600 dark:text-blue-400" />
+        <div className="rounded-xl border bg-card p-5 shadow-sm">
+          <div className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground">TOP PAGES</div>
+          {views && views.paths.length ? (
+            <div className="space-y-1.5">
+              {views.paths.slice(0, 4).map((row) => (
+                <div key={row.path} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="truncate font-medium">{row.path === '/' ? 'HOME' : row.path.slice(1).toUpperCase() || 'HOME'}</span>
+                  <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{row.views}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="py-3 text-xs text-muted-foreground">No views recorded yet.</p>
+          )}
+        </div>
       </div>
 
       {spotsLeft > 0 && (
