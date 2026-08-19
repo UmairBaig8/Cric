@@ -55,7 +55,8 @@ export default function WorkflowTab() {
         location: player.location, batting_style: player.batting_style ?? '',
         bowling_style: player.bowling_style ?? '', bowling_arm: player.bowling_arm ?? '',
         availability: player.availability ?? '', self_rating: player.self_rating,
-        dpl_played: player.dpl_played,
+        dpl_played: player.dpl_played, photo_url: player.photo_url ?? '',
+        jersey_size: player.jersey_size ?? '',
       };
       setCurrent(snapshot);
     }
@@ -130,11 +131,30 @@ export default function WorkflowTab() {
             <DialogDescription>Current value → proposed value. Approving applies it to the player record.</DialogDescription>
           </DialogHeader>
           {viewing && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {Object.entries(viewing.changes).map(([key, value]) => {
                 const label = FIELD_LABELS[key] ?? key.toUpperCase();
-                const oldValue = current ? String(current[key] ?? '—') : '…';
+                const oldValue = current ? String(current[key] ?? '') : '';
                 const newValue = String(value ?? '');
+                if (key === 'photo_url') {
+                  return (
+                    <div key={key} className="rounded-lg border bg-muted/40 p-3">
+                      <p className="mb-2 text-xs font-semibold text-muted-foreground">{label}</p>
+                      <div className="flex items-center justify-center gap-4">
+                        {[{ src: oldValue, tag: 'CURRENT' }, { src: newValue, tag: 'PROPOSED' }].map((side, i) => (
+                          <div key={side.tag} className="flex flex-col items-center gap-1.5">
+                            <div className="size-20 overflow-hidden rounded-xl border bg-background shadow-sm">
+                              {side.src
+                                ? <img src={side.src} alt={side.tag} className="size-full object-cover" />
+                                : <span className="flex size-full items-center justify-center text-2xl font-black text-muted-foreground/40">—</span>}
+                            </div>
+                            <span className={i === 1 ? 'text-[10px] font-bold text-emerald-600 dark:text-emerald-400' : 'text-[10px] font-bold text-muted-foreground'}>{side.tag}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
                 return (
                   <div key={key} className="flex items-center gap-2 text-sm">
                     <span className="w-24 shrink-0 font-medium">{label}</span>
