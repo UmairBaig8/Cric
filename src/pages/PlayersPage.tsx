@@ -189,6 +189,8 @@ export default function PlayersPage() {
                 handle={player.location || 'DPL 2026'}
                 status={player.dpl_played ? '★ DPL 2025 ALUM' : 'NEW TO DPL 2026'}
                 fallbackInitials={player.name.split(' ').map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
+                rating={player.self_rating}
+                batting={player.batting_style}
                 onEdit={() => openEdit(player)}
               />
             ))}
