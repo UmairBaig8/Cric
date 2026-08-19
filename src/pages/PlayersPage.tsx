@@ -143,11 +143,6 @@ export default function PlayersPage() {
       <Toaster theme={dark ? 'dark' : 'light'} position="bottom-center" richColors />
       <SiteHeader dark={dark} onToggleTheme={toggleTheme} relative />
       <main className="players-main shell">
-        <header className="players-head">
-          <span className="eyebrow">DPL 2026 / SQUAD</span>
-          <h1>PLAYERS</h1>
-          <p>{filtered.length} PLAYERS</p>
-        </header>
         <div className="players-toolbar">
           <Badge variant="secondary" className="px-3 py-1">{filtered.length} PLAYERS</Badge>
           <div className="relative min-w-56 flex-1">
