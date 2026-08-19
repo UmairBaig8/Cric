@@ -43,7 +43,7 @@ create policy "anyone can read sessions"
 drop function if exists public.admin_views_summary();
 
 create or replace function public.admin_views_summary()
-returns table (today bigint, total bigint, paths jsonb, active_sessions bigint, sessions_today bigint, recent_sessions jsonb)
+returns table (today bigint, total bigint, paths jsonb, active_sessions bigint, sessions_today bigint, recent_sessions jsonb, top_cities jsonb, referrers jsonb)
 language sql
 security definer
 set search_path = 'public'
@@ -67,9 +67,42 @@ as $$
         'browser', s.browser,
         'os', s.os,
         'referrer', s.referrer,
-        'is_active', s.is_active
+        'is_active', s.is_active,
+        'country', s.country,
+        'region', s.region,
+        'city', s.city,
+        'isp', s.isp,
+        'visit_number', s.visit_number,
+        'pages', coalesce((
+          select jsonb_agg(pv.path order by pv.viewed_at)
+          from public.page_views pv
+          where pv.session_id = s.id
+        ), '[]'::jsonb)
       ) order by s.last_seen desc)
       from (select * from public.sessions order by last_seen desc limit 12) s
-    ), '[]'::jsonb) as recent_sessions
+    ), '[]'::jsonb) as recent_sessions,
+    coalesce((
+      select jsonb_agg(jsonb_build_object('label', label, 'sessions', cnt) order by cnt desc)
+      from (
+        select case
+          when city is not null and country is not null then city || ', ' || country
+          when city is not null then city
+          when country is not null then country
+          else 'Unknown'
+        end as label, count(*)::int as cnt
+        from public.sessions
+        where started_at >= date_trunc('day', now())
+        group by 1
+      ) t
+    ), '[]'::jsonb) as top_cities,
+    coalesce((
+      select jsonb_agg(jsonb_build_object('label', label, 'sessions', cnt) order by cnt desc)
+      from (
+        select coalesce(referrer, 'direct') as label, count(*)::int as cnt
+        from public.sessions
+        where started_at >= date_trunc('day', now())
+        group by 1
+      ) t
+    ), '[]'::jsonb) as referrers
   where public.is_admin()
 $$;
