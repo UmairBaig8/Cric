@@ -83,10 +83,24 @@ export default function AdminPage() {
   const [tab, setTab] = useState<TabKey>('dashboard');
   const [playersPreset, setPlayersPreset] = useState<{ photo?: boolean; unassigned?: boolean } | null>(null);
   const [pendingEdits, setPendingEdits] = useState(0);
+  const [anomalies, setAnomalies] = useState(0);
 
   useEffect(() => {
     let alive = true;
     const load = () => fetchPendingEdits().then((rows) => { if (alive) setPendingEdits(rows.length); });
+    load();
+    const id = window.setInterval(load, 60000);
+    return () => { alive = false; window.clearInterval(id); };
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    const load = () => {
+      supabaseRef!.rpc('admin_anomaly_counts').then(({ data, error }) => {
+        if (error || !data || !data[0] || !alive) return;
+        setAnomalies(Number(data[0].flagged_registrations ?? 0) + Number(data[0].flagged_requests ?? 0));
+      });
+    };
     load();
     const id = window.setInterval(load, 60000);
     return () => { alive = false; window.clearInterval(id); };
@@ -236,6 +250,11 @@ export default function AdminPage() {
                   {tab === 'workflow' && pendingEdits > 0 && (
                     <span className="ml-1.5 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold leading-none text-primary-foreground">
                       {pendingEdits}
+                    </span>
+                  )}
+                  {tab === 'activity' && anomalies > 0 && (
+                    <span className="ml-1.5 rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+                      {anomalies}
                     </span>
                   )}
                 </TabsTrigger>

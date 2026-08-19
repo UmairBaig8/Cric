@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  AlertTriangle, ChevronDown, Copy, Fingerprint, History,
+  AlertTriangle, ChevronDown, Download, Fingerprint, History,
   Pencil, RefreshCw, Shield, Trash2, UserPlus,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase as supabaseRef } from '@/lib/supabase';
+import { IdentityTrace } from '@/admin/IdentityTrace';
 
 type AuditEntry = {
   id: number;
@@ -138,7 +139,7 @@ export default function ActivityTab() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [filter, setFilter] = useState<Chip>('ALL');
   const [open, setOpen] = useState<string | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
+  const [traceHash, setTraceHash] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -154,13 +155,42 @@ export default function ActivityTab() {
     return () => { alive = false; };
   }, [refreshKey]);
 
-  const copyHash = useCallback(async (hash: string) => {
-    try {
-      await navigator.clipboard.writeText(hash);
-      setCopied(hash.slice(0, 8));
-      window.setTimeout(() => setCopied(null), 1200);
-    } catch { /* clipboard unavailable */ }
-  }, []);
+  const downloadCsv = (filename: string, headers: string[], rows: (string | number | null)[][]) => {
+    const esc = (value: string | number | null) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const csv = '\uFEFF' + [headers, ...rows].map((row) => row.map(esc).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportRegistrations = () => {
+    const rows = (intel ?? []).map((r) => [
+      r.name, r.email, r.created_at, r.city ?? '', r.country ?? '', r.isp ?? '',
+      [r.device, r.browser, r.os].filter(Boolean).join(' | '), r.ip_hash ?? '', r.visit_number ?? '',
+      r.has_session ? 'yes' : 'no', r.same_ip_regs, r.dup_email,
+    ]);
+    downloadCsv('dpl-registrations.csv', ['name', 'email', 'registered_at', 'city', 'country', 'isp', 'device', 'ip_hash', 'visit_number', 'has_session', 'same_ip_count', 'dup_email_count'], rows);
+  };
+
+  const exportFlagged = () => {
+    const rows = feed.filter((f) => f.flagged).map((f) =>
+      f.reg
+        ? [f.reg.name, f.reg.email, f.reg.created_at, `same ip ×${f.reg.same_ip_regs}`, `dup email ×${f.reg.dup_email}`, `no session: ${!f.reg.has_session}`]
+        : [f.intel?.player_name ?? '', '', f.when, '', '', `other names on connection ×${f.intel?.other_names_on_connection ?? 0}`],
+    );
+    downloadCsv('dpl-flagged.csv', ['name', 'email', 'when', 'same_ip', 'dup_email', 'note'], rows);
+  };
+
+  const exportAudit = () => {
+    const rows = (audit ?? []).map((e) => [
+      e.created_at, e.actor_email ?? '', e.action, e.requester ?? '', JSON.stringify(e.detail ?? {}),
+    ]);
+    downloadCsv('dpl-audit-log.csv', ['when', 'actor', 'action', 'requester', 'detail'], rows);
+  };
 
   const intelById = new Map((editIntel ?? []).map((i) => [i.id, i]));
 
@@ -230,12 +260,21 @@ export default function ActivityTab() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {flaggedCount > 0 ? (
             <span className="flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
               <AlertTriangle className="size-3.5" /> {flaggedCount} flagged
             </span>
           ) : null}
+          <Button size="sm" variant="outline" onClick={exportRegistrations} title="Download all registrations as CSV">
+            <Download className="size-3.5" /> REGS
+          </Button>
+          <Button size="sm" variant="outline" onClick={exportFlagged} title="Download flagged registrations and requests as CSV">
+            <Download className="size-3.5" /> FLAGGED
+          </Button>
+          <Button size="sm" variant="outline" onClick={exportAudit} title="Download audit log as CSV">
+            <Download className="size-3.5" /> AUDIT
+          </Button>
           <Button size="sm" variant="outline" onClick={() => setRefreshKey((k) => k + 1)}>
             <RefreshCw className="size-3.5" /> REFRESH
           </Button>
@@ -312,13 +351,13 @@ export default function ActivityTab() {
                       {item.reg.ip_hash ? (
                         <button
                           type="button"
-                          onClick={() => void copyHash(item.reg!.ip_hash!)}
-                          title="Copy IP hash"
+                          onClick={() => setTraceHash(item.reg!.ip_hash!)}
+                          title="Open connection trace"
                           className="inline-flex items-center gap-1.5 rounded border px-2 py-1 font-mono text-[10px] text-muted-foreground hover:text-foreground"
                         >
                           <Fingerprint className="size-3" />
                           {item.reg.ip_hash}
-                          {copied === item.reg.ip_hash.slice(0, 8) ? <Copy className="size-3 text-emerald-500" /> : null}
+                          <span className="rounded bg-primary/10 px-1 text-[9px] font-bold text-primary">TRACE</span>
                         </button>
                       ) : null}
                       {item.reg.visitor_id ? (
@@ -354,13 +393,13 @@ export default function ActivityTab() {
                       {item.intel.ip_hash ? (
                         <button
                           type="button"
-                          onClick={() => void copyHash(item.intel!.ip_hash!)}
-                          title="Copy IP hash"
+                          onClick={() => setTraceHash(item.intel!.ip_hash!)}
+                          title="Open connection trace"
                           className="inline-flex items-center gap-1.5 rounded border px-2 py-1 font-mono text-[10px] text-muted-foreground hover:text-foreground"
                         >
                           <Fingerprint className="size-3" />
                           {item.intel.ip_hash}
-                          {copied === item.intel.ip_hash.slice(0, 8) ? <Copy className="size-3 text-emerald-500" /> : null}
+                          <span className="rounded bg-primary/10 px-1 text-[9px] font-bold text-primary">TRACE</span>
                         </button>
                       ) : null}
                       {item.intel.visitor_id ? (
@@ -386,6 +425,8 @@ export default function ActivityTab() {
           </div>
         )}
       </div>
+
+      <IdentityTrace connHash={traceHash} open={!!traceHash} onOpenChange={(open) => { if (!open) setTraceHash(null); }} />
     </div>
   );
 }
