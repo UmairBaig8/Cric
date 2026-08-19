@@ -322,7 +322,6 @@ export async function adminAddPlayer(player: {
   if (!supabase) return { error: 'Supabase is not configured.' };
   const { error } = await supabase.from('registrations').insert(player);
   if (error) return { error: error.message };
-  void logAudit('player.add', null, { name: player.name, employee_id: player.employee_id });
   return {};
 }
 
@@ -344,6 +343,5 @@ export async function adminUpdatePlayer(playerId: string, patch: {
   if (!supabase) return { error: 'Supabase is not configured.' };
   const { error } = await supabase.from('registrations').update(patch).eq('id', playerId);
   if (error) return { error: error.message };
-  void logAudit('player.update', playerId, { patch });
   return {};
 }

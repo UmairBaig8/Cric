@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
       ''
     ).slice(0, 45);
     const ipHash = ip ? await sha256(ip) : null;
+    console.log('[track-session]', JSON.stringify({ ts: new Date().toISOString(), ip, ipHash, visitor_id: body.visitor_id ?? null }));
 
     let geo: { country: string | null; region: string | null; city: string | null; isp: string | null } = {
       country: null,
