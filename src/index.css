@@ -49,7 +49,7 @@
   --destructive-foreground: #ffffff;
   --border: #dce5ec;
   --input: #d3dee6;
-  --ring: #873cff;
+  --ring: #8b9caf;
   --radius: 0.625rem;
 }
 
@@ -72,7 +72,7 @@
   --destructive-foreground: #ffffff;
   --border: #263747;
   --input: #263747;
-  --ring: #873cff;
+  --ring: #4e6378;
 }
 
 @layer base {

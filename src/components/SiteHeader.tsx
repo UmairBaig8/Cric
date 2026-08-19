@@ -5,6 +5,7 @@ import { withBase } from '@/lib/base';
 const navLinks: Array<[string, string, boolean]> = [
   ['/', 'HOME', true],
   ['/teams', 'TEAMS', false],
+  ['/players', 'PLAYERS', false],
   ['/auction', 'AUCTION', true],
   ['/fixtures', 'FIXTURES', true],
   ['/leaderboard', 'LEADERBOARD', true],
