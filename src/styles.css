@@ -208,12 +208,12 @@
 .player-card-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 20%}
 .player-card-bg-fallback{display:flex;align-items:center;justify-content:center;font:900 italic clamp(56px,7vw,96px)/1 'Barlow Condensed';color:rgba(255,255,255,.16);background:linear-gradient(160deg,#101a2b,#1b2f47)}
 .player-card-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(3,9,20,.72) 0%,rgba(3,9,20,.18) 34%,rgba(3,9,20,.18) 60%,rgba(3,9,20,.85) 100%)}
-.player-card-edit{position:absolute;top:10px;right:10px;z-index:3;display:flex;align-items:center;gap:5px;padding:7px 11px;font-size:11px;font-weight:700;letter-spacing:.8px;color:#fff;background:rgba(3,9,20,.55);border:1px solid rgba(255,255,255,.22);border-radius:999px;backdrop-filter:blur(6px);cursor:pointer;transition:background .15s ease}
+.player-card-top{position:absolute;top:10px;left:0;right:0;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:0 12px;color:#fff;text-shadow:0 1px 8px rgba(3,9,20,.6)}
+.player-card-id{flex:1;min-width:0;padding-top:4px}
+.player-card-id h3{font:700 22px/1.1 'Barlow Condensed';letter-spacing:.4px;margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player-card-id p{margin:0;font-size:10.5px;font-weight:600;letter-spacing:.8px;color:#9fd9ec;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player-card-edit{flex-shrink:0;display:flex;align-items:center;gap:5px;padding:7px 11px;font-size:11px;font-weight:700;letter-spacing:.8px;color:#fff;background:rgba(3,9,20,.55);border:1px solid rgba(255,255,255,.22);border-radius:999px;backdrop-filter:blur(6px);cursor:pointer;transition:background .15s ease}
 .player-card-edit:hover{background:rgba(3,9,20,.8)}
-.player-card-top{position:absolute;top:46px;left:0;right:0;z-index:2;padding:0 14px;color:#fff;text-shadow:0 1px 8px rgba(3,9,20,.6)}
-.player-card-top h3{font:700 22px/1.15 'Barlow Condensed';letter-spacing:.4px;margin:0 0 2px}
-.player-card-top p{margin:0 0 3px;font-size:12px;font-weight:600;letter-spacing:1px;color:#9fd9ec;text-transform:uppercase}
-.player-card-top span{font-size:11px;letter-spacing:.6px;color:rgba(255,255,255,.75)}
 .player-card-bottom{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:10px 12px 12px;color:#fff}
 .player-card-status{display:inline-block;margin-bottom:8px;padding:3px 9px;font-size:9px;font-weight:800;letter-spacing:1.2px;border-radius:999px;background:rgba(9,201,216,.9);color:#03121a}
 .player-card-stats{display:grid;grid-template-columns:1fr 1.4fr;gap:6px}

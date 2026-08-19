@@ -21,13 +21,14 @@ export default function ProfileCard({ avatarUrl, name, title, handle, status, fa
         <div className="player-card-bg player-card-bg-fallback">{fallbackInitials}</div>
       )}
       <div className="player-card-shade" />
-      <button className="player-card-edit" type="button" onClick={onEdit} aria-label={`Edit ${name}`}>
-        <Pencil className="size-3.5" /> EDIT
-      </button>
       <div className="player-card-top">
-        <h3>{name}</h3>
-        <p>{title}</p>
-        <span>@{handle}</span>
+        <div className="player-card-id">
+          <h3>{name}</h3>
+          <p>{title} · @{handle}</p>
+        </div>
+        <button className="player-card-edit" type="button" onClick={onEdit} aria-label={`Edit ${name}`}>
+          <Pencil className="size-3.5" /> EDIT
+        </button>
       </div>
       <div className="player-card-bottom">
         <span className="player-card-status">{status}</span>
