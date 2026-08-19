@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Activity, Eye, BarChart3, Wifi, Monitor, Smartphone, Tablet, MapPin, Repeat, UserPlus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { supabase as supabaseRef } from '@/lib/supabase';
@@ -66,19 +66,21 @@ function HourlyChart({ hours }: { hours: { hour: number; views: number }[] }) {
     <div className="rounded-xl border bg-card p-5 shadow-sm">
       <h3 className="mb-3 font-display text-lg font-bold tracking-wide">TRAFFIC — LAST 24H</h3>
       <div className="h-44 w-full">
-        <AreaChart data={buckets} margin={{ top: 4, right: 4, left: -22, bottom: 0 }}>
-          <defs>
-            <linearGradient id="hourFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#873cff" stopOpacity={0.5} />
-              <stop offset="100%" stopColor="#873cff" stopOpacity={0.03} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid vertical={false} strokeDasharray="3 3" />
-          <XAxis dataKey="hour" tickFormatter={(h: number) => `${String(h).padStart(2, '0')}:00`} tickLine={false} axisLine={false} tickMargin={6} fontSize={10} interval={2} />
-          <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={10} />
-          <Tooltip formatter={(value) => [`${value} views`]} labelFormatter={(h) => `${String(h).padStart(2, '0')}:00`} contentStyle={{ fontSize: 12 }} />
-          <Area type="monotone" dataKey="views" stroke="#873cff" strokeWidth={2} fill="url(#hourFill)" name="Views" />
-        </AreaChart>
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={buckets} margin={{ top: 4, right: 4, left: -22, bottom: 0 }}>
+            <defs>
+              <linearGradient id="hourFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#873cff" stopOpacity={0.5} />
+                <stop offset="100%" stopColor="#873cff" stopOpacity={0.03} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" />
+            <XAxis dataKey="hour" tickFormatter={(h: number) => `${String(h).padStart(2, '0')}:00`} tickLine={false} axisLine={false} tickMargin={6} fontSize={10} interval={2} tick={{ fill: 'var(--color-muted-foreground)' }} />
+            <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={10} tick={{ fill: 'var(--color-muted-foreground)' }} />
+            <Tooltip formatter={(value) => [`${value} views`]} labelFormatter={(h) => `${String(h).padStart(2, '0')}:00`} contentStyle={{ fontSize: 12 }} />
+            <Area type="monotone" dataKey="views" stroke="#873cff" strokeWidth={2} fill="url(#hourFill)" name="Views" />
+          </AreaChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
