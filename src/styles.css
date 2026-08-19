@@ -147,6 +147,12 @@
 .dark.players-page footer{color:#5b6f7e;border-top-color:#1c2b3a}
 .players-main{flex:1;width:min(1400px,92%);margin:0 auto;padding:44px 0 70px}
 .players-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:26px}
+.players-toolbar [data-slot=input],.players-toolbar [data-slot=select-trigger]{background:rgba(255,255,255,.92);border-color:rgba(20,45,70,.16);box-shadow:0 1px 3px rgba(20,45,70,.06);color:#0b1420;transition:border-color .15s ease,box-shadow .15s ease}
+.players-toolbar [data-slot=input]::placeholder{color:#8a9aa8}
+.players-toolbar [data-slot=input]:focus,.players-toolbar [data-slot=select-trigger]:focus-within{border-color:#0f9bb0;box-shadow:0 0 0 3px rgba(15,155,176,.12)}
+.dark .players-toolbar [data-slot=input],.dark .players-toolbar [data-slot=select-trigger]{background:rgba(3,9,20,.5);border-color:rgba(148,163,184,.18);color:#e7eef4}
+.dark .players-toolbar [data-slot=input]::placeholder{color:#5b6f7e}
+.dark .players-toolbar [data-slot=input]:focus,.dark .players-toolbar [data-slot=select-trigger]:focus-within{border-color:#28dce8;box-shadow:0 0 0 3px rgba(40,220,232,.14)}
 .players-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
 .teams-head{text-align:center}
 .teams-head .eyebrow{color:#0f9bb0}
@@ -203,12 +209,16 @@
 .reg-confirm{display:grid;gap:12px}.reg-confirm-title{font:900 10px Inter;letter-spacing:2px;color:#65e5ed;text-transform:uppercase;text-align:center;margin:0}.reg-pc-static{width:min(520px,100%);margin:0 auto;border:1px solid rgba(101,229,237,.3);border-radius:16px;overflow:hidden;background:linear-gradient(180deg,#16202f 0%,#0d1521 100%);box-shadow:0 18px 36px rgba(5,16,32,.32)}.reg-confirm-extra{display:grid;gap:8px;margin-top:6px;padding-top:10px;border-top:1px solid rgba(157,176,191,.2)}.reg-confirm-extra-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:9px}.reg-confirm-extra-row span{font-weight:900;letter-spacing:1.4px;color:#64788c}.reg-confirm-extra-row b{font-weight:800;letter-spacing:.4px;color:#dbe7ef;text-align:right}
 
 /* ---------- lightweight player card (photo bg, info top/bottom) ---------- */
-.player-card-lite{position:relative;aspect-ratio:3/4;border-radius:18px;overflow:hidden;background:#0b1420;box-shadow:0 10px 24px rgba(20,45,70,.14);border:1px solid rgba(20,45,70,.1)}
+.player-card-lite{position:relative;aspect-ratio:3/4;border-radius:18px;overflow:hidden;background:#0b1420;box-shadow:0 10px 24px rgba(20,45,70,.14);border:1px solid rgba(20,45,70,.1);transition:transform .28s cubic-bezier(.2,.7,.3,1),box-shadow .28s ease}
+.player-card-lite:hover{transform:translateY(-5px);box-shadow:0 20px 38px rgba(20,45,70,.24)}
+.dark .player-card-lite:hover{box-shadow:0 20px 38px rgba(0,0,0,.55)}
 .dark .player-card-lite{border-color:rgba(148,163,184,.14)}
-.player-card-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 20%}
+.player-card-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 20%;transition:transform .55s cubic-bezier(.2,.7,.3,1)}
+.player-card-lite:hover .player-card-bg{transform:scale(1.05)}
 .player-card-bg-fallback{display:flex;align-items:center;justify-content:center;font:900 italic clamp(56px,7vw,96px)/1 'Barlow Condensed';color:rgba(255,255,255,.16);background:linear-gradient(160deg,#101a2b,#1b2f47)}
 .player-card-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(3,9,20,.72) 0%,rgba(3,9,20,.18) 34%,rgba(3,9,20,.18) 60%,rgba(3,9,20,.85) 100%)}
-.player-card-top{position:absolute;top:10px;left:0;right:0;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:0 12px;color:#fff;text-shadow:0 1px 8px rgba(3,9,20,.6)}
+.player-card-top{position:absolute;top:10px;left:0;right:0;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:0 12px;color:#fff;text-shadow:0 1px 8px rgba(3,9,20,.6);transition:transform .28s cubic-bezier(.2,.7,.3,1)}
+.player-card-lite:hover .player-card-top{transform:translateY(-2px)}
 .player-card-id{flex:1;min-width:0;padding-top:4px}
 .player-card-id h3{font:700 22px/1.1 'Barlow Condensed';letter-spacing:.4px;margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .player-card-id p{margin:0;font-size:10.5px;font-weight:600;letter-spacing:.8px;color:#9fd9ec;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
