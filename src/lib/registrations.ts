@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import type { RegistrationInput } from '../types';
+import { getVisitorId } from './analytics';
 
 const PHOTO_BUCKET = 'player-photos';
 
@@ -30,7 +31,7 @@ export async function registerPlayer(input: RegistrationInput, photo?: File) {
   if (!supabase) return { ok: true as const, demo: true as const };
 
   const photoUrl = photo ? await uploadPlayerPhoto(photo) : null;
-  const payload = { ...input, photo_url: photoUrl };
+  const payload = { ...input, photo_url: photoUrl, visitor_id: getVisitorId() };
   const { error } = await supabase.from('registrations').insert(payload);
   if (error) throw new Error(error.message);
   return { ok: true as const, demo: false as const };

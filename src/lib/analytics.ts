@@ -60,9 +60,13 @@ function parseUA(ua: string): { device: string; browser: string; os: string } {
 
 const profile = (() => {
   try {
-    return parseUA(navigator.userAgent);
+    return {
+      ...parseUA(navigator.userAgent),
+      language: navigator.language?.slice(0, 10) ?? null,
+      screen: window.screen?.width && window.screen?.height ? `${window.screen.width}x${window.screen.height}` : null,
+    };
   } catch {
-    return { device: 'Other', browser: 'Other', os: 'Other' };
+    return { device: 'Other', browser: 'Other', os: 'Other', language: null, screen: null };
   }
 })();
 
@@ -133,6 +137,10 @@ function visitorId(): string | null {
   } catch {
     return null;
   }
+}
+
+export function getVisitorId(): string | null {
+  return visitorId();
 }
 
 function initSession() {

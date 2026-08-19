@@ -43,7 +43,7 @@ create policy "anyone can read sessions"
 drop function if exists public.admin_views_summary();
 
 create or replace function public.admin_views_summary()
-returns table (today bigint, total bigint, paths jsonb, active_sessions bigint, sessions_today bigint, recent_sessions jsonb, top_cities jsonb, referrers jsonb)
+returns table (today bigint, total bigint, paths jsonb, active_sessions bigint, sessions_today bigint, recent_sessions jsonb, top_cities jsonb, referrers jsonb, hours jsonb, heatmap jsonb, registered_visitors bigint)
 language sql
 security definer
 set search_path = 'public'
@@ -66,6 +66,8 @@ as $$
         'device', s.device,
         'browser', s.browser,
         'os', s.os,
+        'language', s.language,
+        'screen', s.screen,
         'referrer', s.referrer,
         'is_active', s.is_active,
         'country', s.country,
@@ -103,6 +105,25 @@ as $$
         where started_at >= date_trunc('day', now())
         group by 1
       ) t
-    ), '[]'::jsonb) as referrers
+    ), '[]'::jsonb) as referrers,
+    coalesce((
+      select jsonb_agg(jsonb_build_object('hour', h, 'views', cnt) order by h)
+      from (
+        select extract(epoch from date_trunc('hour', viewed_at))::bigint as h, count(*)::int as cnt
+        from public.page_views
+        where viewed_at >= now() - interval '24 hours'
+        group by 1
+      ) t
+    ), '[]'::jsonb) as hours,
+    coalesce((
+      select jsonb_agg(jsonb_build_object('dow', dow, 'hour', hour, 'views', cnt))
+      from (
+        select extract(dow from viewed_at)::int as dow, extract(hour from viewed_at)::int as hour, count(*)::int as cnt
+        from public.page_views
+        where viewed_at >= now() - interval '7 days'
+        group by 1, 2
+      ) t
+    ), '[]'::jsonb) as heatmap,
+    (select count(*)::bigint from public.registrations where visitor_id is not null) as registered_visitors
   where public.is_admin()
 $$;
