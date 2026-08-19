@@ -13,6 +13,7 @@ type AuditEntry = {
   action: string;
   target_id: string | null;
   detail: { name?: string; email?: string; employee_id?: string | null; visitor_id?: string | null; changed?: Record<string, unknown>; note?: string | null; values?: Record<string, unknown>; team_id?: string; role?: string; request_id?: string; patch?: Record<string, unknown> } | null;
+  requester: string | null;
   created_at: string;
 };
 
@@ -155,7 +156,7 @@ export default function ActivityTab() {
       flagged: false,
       icon: actionKind(e.action),
       title: actionLabel(e.action),
-      sub: e.actor_email ?? 'SITE VISITOR',
+      sub: [e.actor_email ?? 'SITE VISITOR', e.requester ? `submitted by ${e.requester}` : null].filter(Boolean).join(' · '),
       audit: e,
       summary: detailSummary(e),
     })),
