@@ -27,9 +27,11 @@ const ARM_OPTIONS = ['Not applicable', 'Right arm', 'Left arm'];
 const LOCATION_OPTIONS = ['CZ', 'SP', 'Other'];
 const AVAILABILITY_OPTIONS = ['Available for all matches', 'Available for most matches', 'Need schedule confirmation'];
 const JERSEY_OPTIONS = ['S', 'M', 'L', 'XL', 'XXL'];
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 const editSchema = z.object({
   name: z.string().min(2, 'Name is required.'),
+  email: z.string().min(1, 'Work email is required.').regex(EMAIL_RE, 'Enter a valid email address (e.g. you@company.com).'),
   player_type: z.string().min(1, 'Role is required.'),
   gender: z.string().min(1, 'Gender is required.'),
   location: z.string().min(1, 'Area is required.'),
@@ -95,6 +97,7 @@ export default function PlayersPage() {
     setPhotoPreview(player.photo_url ?? '');
     form.reset({
       name: player.name,
+      email: player.email ?? '',
       player_type: player.player_type,
       gender: player.gender,
       location: player.location,
@@ -121,6 +124,7 @@ export default function PlayersPage() {
       }
     }
     if (values.name !== editing.name) changes.name = values.name;
+    if (values.email !== (editing.email ?? '')) changes.email = values.email;
     if (values.player_type !== editing.player_type) changes.player_type = values.player_type;
     if (values.gender !== editing.gender) changes.gender = values.gender;
     if (values.location !== editing.location) changes.location = values.location;
@@ -261,9 +265,14 @@ export default function PlayersPage() {
                     </div>
                   ) : null}
                 </div>
-                <FormField control={form.control} name="name" render={({ field }) => (
-                  <FormItem className="sm:pt-1"><FormLabel>Full name</FormLabel><FormControl><Input {...field} placeholder="e.g. Virat Kohli" /></FormControl><FormMessage /></FormItem>
-                )} />
+                <div className="grid gap-3 sm:pt-1">
+                  <FormField control={form.control} name="name" render={({ field }) => (
+                    <FormItem><FormLabel>Full name</FormLabel><FormControl><Input {...field} placeholder="e.g. Virat Kohli" /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={form.control} name="email" render={({ field }) => (
+                    <FormItem><FormLabel>Work email</FormLabel><FormControl><Input {...field} type="email" placeholder="e.g. you@company.com" /></FormControl><FormMessage /></FormItem>
+                  )} />
+                </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <FormField control={form.control} name="location" render={({ field }) => (
