@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, Camera } from 'lucide-react';
 import SiteHeader from '@/components/SiteHeader';
 import ProfileCard from '@/components/ProfileCard';
 import { useTheme } from '@/lib/useTheme';
@@ -228,10 +228,42 @@ export default function PlayersPage() {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <label className="mx-auto block w-36 cursor-pointer">
+                <span className="relative block aspect-3/4 overflow-hidden rounded-xl border border-border bg-muted shadow-sm transition-shadow hover:shadow-md">
+                  {photoPreview
+                    ? <img src={photoPreview} alt="Player photo" className="h-full w-full object-cover" />
+                    : <span className="flex h-full w-full items-center justify-center text-4xl text-muted-foreground">📷</span>}
+                  <span className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/60 via-transparent to-transparent pb-2 text-[10px] font-bold tracking-widest text-white opacity-0 transition-opacity hover:opacity-100">
+                    CHANGE PHOTO
+                  </span>
+                  <span className="absolute right-1.5 bottom-1.5 flex size-7 items-center justify-center rounded-full bg-primary/90 text-primary-foreground shadow">
+                    <Camera className="size-3.5" />
+                  </span>
+                </span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null;
+                    setPhotoFile(file);
+                    if (file) setPhotoPreview(URL.createObjectURL(file));
+                  }}
+                />
+              </label>
+              {photoFile ? (
+                <div className="-mt-2 text-center">
+                  <Button variant="outline" size="sm" type="button" onClick={() => { setPhotoFile(null); setPhotoPreview(editing?.photo_url ?? ''); }}>
+                    Remove photo
+                  </Button>
+                </div>
+              ) : null}
+              <p className="-mt-2 text-center text-xs text-muted-foreground">Tap the card to change your photo — it goes for approval like every other change.</p>
+
               <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem><FormLabel>Full name</FormLabel><FormControl><Input {...field} placeholder="e.g. Virat Kohli" /></FormControl><FormMessage /></FormItem>
               )} />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-3">
                 <FormField control={form.control} name="location" render={({ field }) => (
                   <FormItem><FormLabel>Location</FormLabel>
                     <FormControl>
@@ -251,6 +283,18 @@ export default function PlayersPage() {
                         <SelectContent>
                           <SelectItem value="Male">Male</SelectItem>
                           <SelectItem value="Female">Female</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="dpl_played" render={({ field }) => (
+                  <FormItem><FormLabel>Played DPL before?</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="YES">Yes</SelectItem>
+                          <SelectItem value="NO">No</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl><FormMessage /></FormItem>
@@ -301,18 +345,6 @@ export default function PlayersPage() {
                       </Select>
                     </FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="dpl_played" render={({ field }) => (
-                  <FormItem><FormLabel>Played DPL before?</FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="YES">Yes</SelectItem>
-                          <SelectItem value="NO">No</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl><FormMessage /></FormItem>
-                )} />
                 <FormField control={form.control} name="self_rating" render={({ field }) => (
                   <FormItem><FormLabel>Rate your game <span className="text-muted-foreground">(1–5)</span></FormLabel>
                     <FormControl>
@@ -335,49 +367,22 @@ export default function PlayersPage() {
                       </Select>
                     </FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="jersey_size" render={({ field }) => (
-                  <FormItem><FormLabel>Jersey size</FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Select size" /></SelectTrigger>
-                        <SelectContent>
-                          {JERSEY_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </FormControl><FormMessage /></FormItem>
-                )} />
               </div>
-              <FormItem>
-                <FormLabel>Photo</FormLabel>
-                <FormControl>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-4">
-                      <div className="h-20 w-16 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
-                        {photoPreview
-                          ? <img src={photoPreview} alt="Current photo" className="h-full w-full object-cover" />
-                          : <div className="flex h-full w-full items-center justify-center text-2xl text-muted-foreground">📷</div>}
-                      </div>
-                      <div className="space-y-1">
-                        <Input
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp"
-                          onChange={(event) => {
-                            const file = event.target.files?.[0] ?? null;
-                            setPhotoFile(file);
-                            if (file) setPhotoPreview(URL.createObjectURL(file));
-                          }}
-                        />
-                        <p className="text-xs text-muted-foreground">New photo goes for approval like every other change.</p>
-                      </div>
-                    </div>
-                    {photoFile ? (
-                      <Button variant="outline" size="sm" type="button" onClick={() => { setPhotoFile(null); setPhotoPreview(editing?.photo_url ?? ''); }}>
-                        Remove photo
-                      </Button>
-                    ) : null}
-                  </div>
-                </FormControl>
-              </FormItem>
+              <FormField control={form.control} name="jersey_size" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Jersey size <Badge variant="outline" className="ml-1 px-1.5 py-0 text-[9px] font-bold align-middle">TENTATIVE</Badge></FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger><SelectValue placeholder="Select size" /></SelectTrigger>
+                      <SelectContent>
+                        {JERSEY_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                  <p className="text-xs text-muted-foreground">Final size is confirmed on jersey day.</p>
+                </FormItem>
+              )} />
               <DialogFooter>
                 <Button variant="outline" type="button" onClick={() => setEditing(null)}>CANCEL</Button>
                 <Button type="submit" disabled={submitting}>
