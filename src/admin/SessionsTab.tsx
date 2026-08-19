@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Activity, Eye, BarChart3, Wifi, Monitor, Smartphone, Tablet, MapPin, Repeat, UserPlus } from 'lucide-react';
+import { Activity, Eye, BarChart3, Wifi, Monitor, Smartphone, Tablet, MapPin, Repeat, UserPlus, Network, MonitorSmartphone } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { supabase as supabaseRef } from '@/lib/supabase';
 import { onOnlineCount } from '@/lib/analytics';
@@ -132,9 +132,100 @@ const DeviceIcon = ({ device }: { device: string | null }) => {
   return <Monitor className="size-4 shrink-0 text-muted-foreground" />;
 };
 
+function SessionGroups({ groups }: { groups: GroupData | null }) {
+  const ipRows = groups?.ip_groups ?? [];
+  const devRows = groups?.device_groups ?? [];
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <div className="rounded-xl border bg-card p-5 shadow-sm">
+        <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted-foreground">
+          <Network className="size-3.5" /> CONNECTIONS — GROUPED BY IP HASH
+        </div>
+        {ipRows.length ? (
+          <div className="space-y-1.5">
+            {ipRows.slice(0, 8).map((row) => {
+              const shared = (row.visitor_count ?? 0) > 1 || (row.fingerprint_count ?? 0) > 1;
+              return (
+                <div key={row.ip_hash} className={`flex items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-sm ${shared ? 'border-amber-500/30 bg-amber-500/5' : ''}`}>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-[10px] text-muted-foreground">{row.ip_hash.slice(0, 12)}…</span>
+                      {shared ? <Badge variant="secondary" className="text-[9px]">SHARED</Badge> : null}
+                    </div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      {[row.city, row.country].filter(Boolean).join(', ')}{row.isp ? ` · ${row.isp}` : ''}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right text-[10px] text-muted-foreground whitespace-nowrap">
+                    <div className="font-bold text-foreground">{row.session_count} session{row.session_count === 1 ? '' : 's'}</div>
+                    {row.visitor_count > 1 ? <div>{row.visitor_count} visitors</div> : null}
+                    {row.fingerprint_count > 1 ? <div>{row.fingerprint_count} devices</div> : null}
+                    {row.active_count > 0 ? <div className="text-emerald-600 dark:text-emerald-400">{row.active_count} live</div> : null}
+                    <div>seen {fmtAgo(row.last_seen)}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="py-3 text-xs text-muted-foreground">No connection data yet.</p>
+        )}
+      </div>
+      <div className="rounded-xl border bg-card p-5 shadow-sm">
+        <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted-foreground">
+          <MonitorSmartphone className="size-3.5" /> DEVICES — GROUPED BY FINGERPRINT
+        </div>
+        {devRows.length ? (
+          <div className="space-y-1.5">
+            {devRows.slice(0, 8).map((row) => {
+              const shared = (row.visitor_count ?? 0) > 1 || (row.ip_count ?? 0) > 1;
+              return (
+                <div key={row.fingerprint} className={`flex items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-sm ${shared ? 'border-amber-500/30 bg-amber-500/5' : ''}`}>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-[10px] text-muted-foreground">fp:{row.fingerprint.slice(0, 8)}…</span>
+                      {shared ? <Badge variant="secondary" className="text-[9px]">SHARED</Badge> : null}
+                    </div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      {[row.device, row.browser, row.os].filter(Boolean).join(' · ') || 'Unknown device'}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right text-[10px] text-muted-foreground whitespace-nowrap">
+                    <div className="font-bold text-foreground">{row.session_count} session{row.session_count === 1 ? '' : 's'}</div>
+                    {row.visitor_count > 1 ? <div>{row.visitor_count} visitors</div> : null}
+                    {row.ip_count > 1 ? <div>{row.ip_count} connections</div> : null}
+                    {row.active_count > 0 ? <div className="text-emerald-600 dark:text-emerald-400">{row.active_count} live</div> : null}
+                    <div>seen {fmtAgo(row.last_seen)}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="py-3 text-xs text-muted-foreground">Fingerprints kick in with the next visit.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type GroupData = {
+  ip_groups: {
+    ip_hash: string; city: string | null; region: string | null; country: string | null; isp: string | null;
+    device: string | null; browser: string | null; os: string | null;
+    session_count: number; visitor_count: number; fingerprint_count: number; active_count: number; last_seen: string;
+  }[];
+  device_groups: {
+    fingerprint: string; device: string | null; browser: string | null; os: string | null;
+    session_count: number; visitor_count: number; ip_count: number; active_count: number; last_seen: string;
+  }[];
+  active_visitors: number;
+};
+
 export default function SessionsTab() {
   const [online, setOnline] = useState<number | null>(null);
   const [views, setViews] = useState<ViewsSummary | null>(null);
+  const [groups, setGroups] = useState<GroupData | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => onOnlineCount(setOnline), []);
@@ -145,6 +236,11 @@ export default function SessionsTab() {
       .rpc('admin_views_summary')
       .then(({ data, error }) => {
         if (!error && data && alive) setViews(data[0]);
+      }, () => undefined);
+    supabaseRef!
+      .rpc('admin_session_groups')
+      .then(({ data, error }) => {
+        if (!error && data && alive) setGroups(data[0]);
       }, () => undefined);
     return () => { alive = false; };
   }, [refreshKey]);
@@ -157,7 +253,7 @@ export default function SessionsTab() {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard icon={<Activity />} label="ONLINE NOW" value={online ?? '…'} sub="live tabs" accent="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" />
+        <StatCard icon={<Activity />} label="ONLINE NOW" value={groups?.active_visitors ?? online ?? '…'} sub="unique visitors" accent="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" />
         <StatCard icon={<Eye />} label="VIEWS TODAY" value={views?.today ?? '…'} sub="unique sessions" accent="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400" />
         <StatCard icon={<BarChart3 />} label="TOTAL VIEWS" value={views?.total ?? '…'} sub="all time" accent="bg-blue-500/10 text-blue-600 dark:text-blue-400" />
         <StatCard icon={<Wifi />} label="SESSIONS TODAY" value={views?.sessions_today ?? '…'} sub="visitors started" accent="bg-purple-500/10 text-purple-600 dark:text-purple-400" />
@@ -168,6 +264,8 @@ export default function SessionsTab() {
         <HourlyChart hours={views?.hours ?? []} />
         <PeakHeatmap heatmap={views?.heatmap ?? []} />
       </div>
+
+      <SessionGroups groups={groups} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-xl border bg-card p-5 shadow-sm">
@@ -220,7 +318,7 @@ export default function SessionsTab() {
       <div className="rounded-xl border bg-card p-5 shadow-sm">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h3 className="font-display text-lg font-bold tracking-wide">RECENT SESSIONS</h3>
-          <Badge variant="secondary">ACTIVE NOW: {views?.active_sessions ?? 0}</Badge>
+          <Badge variant="secondary">ACTIVE NOW: {groups?.active_visitors ?? views?.active_sessions ?? 0} unique</Badge>
         </div>
         {views && views.recent_sessions.length ? (
           <div className="space-y-2">

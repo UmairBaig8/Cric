@@ -106,6 +106,7 @@ Deno.serve(async (req) => {
       isp: geo.isp,
       visitor_id: visitorId,
       visit_number: visitNumber,
+      fingerprint: typeof body.fingerprint === 'string' ? body.fingerprint : null,
     };
 
     await rest(`${SUPABASE_URL}/rest/v1/sessions?on_conflict=id`, 'POST', payload, {

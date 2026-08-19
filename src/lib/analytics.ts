@@ -58,15 +58,39 @@ function parseUA(ua: string): { device: string; browser: string; os: string } {
   return { device, browser, os };
 }
 
+function hashString(s: string): string {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return h.toString(16).padStart(8, '0');
+}
+
 const profile = (() => {
   try {
+    const ua = navigator.userAgent;
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone ?? '';
+    const nav = navigator as Navigator & { deviceMemory?: number; hardwareConcurrency?: number };
+    const fingerprint = hashString(
+      JSON.stringify([
+        ua,
+        navigator.language ?? '',
+        window.screen?.width ?? 0,
+        window.screen?.height ?? 0,
+        window.screen?.colorDepth ?? 0,
+        tz,
+        nav.deviceMemory ?? 0,
+        nav.hardwareConcurrency ?? 0,
+        navigator.platform ?? '',
+        navigator.maxTouchPoints ?? 0,
+      ]),
+    );
     return {
-      ...parseUA(navigator.userAgent),
+      ...parseUA(ua),
       language: navigator.language?.slice(0, 10) ?? null,
       screen: window.screen?.width && window.screen?.height ? `${window.screen.width}x${window.screen.height}` : null,
+      fingerprint,
     };
   } catch {
-    return { device: 'Other', browser: 'Other', os: 'Other', language: null, screen: null };
+    return { device: 'Other', browser: 'Other', os: 'Other', language: null, screen: null, fingerprint: null };
   }
 })();
 
