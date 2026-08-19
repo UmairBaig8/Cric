@@ -2,6 +2,8 @@ import { supabase } from './supabase';
 
 const SESSION_KEY = 'dpl_session_id';
 const SEEN_PREFIX = 'dpl_pv_seen_';
+const START_KEY = 'dpl_session_start';
+const HEARTBEAT_MS = 30000;
 
 function sessionId(): string {
   try {
@@ -16,6 +18,92 @@ function sessionId(): string {
   }
 }
 
+function sessionStart(): string {
+  try {
+    let start = window.sessionStorage.getItem(START_KEY);
+    if (!start) {
+      start = new Date().toISOString();
+      window.sessionStorage.setItem(START_KEY, start);
+    }
+    return start;
+  } catch {
+    return new Date().toISOString();
+  }
+}
+
+function pageCount(): number {
+  try {
+    return Object.keys(window.sessionStorage).filter((key) => key.startsWith(SEEN_PREFIX)).length;
+  } catch {
+    return 1;
+  }
+}
+
+function parseUA(ua: string): { device: string; browser: string; os: string } {
+  const os = /iphone|ipad|ipod/i.test(ua) ? 'iOS'
+    : /android/i.test(ua) ? 'Android'
+    : /mac os x/i.test(ua) ? 'macOS'
+    : /windows/i.test(ua) ? 'Windows'
+    : /linux/i.test(ua) ? 'Linux' : 'Other';
+  const mobile = /mobile/i.test(ua);
+  const device = /iphone|ipod/i.test(ua) || (mobile && /android/i.test(ua)) ? 'Mobile'
+    : /ipad/i.test(ua) || (!mobile && /android/i.test(ua)) ? 'Tablet'
+    : /mac os x|windows|linux/i.test(ua) ? 'Desktop' : 'Other';
+  const browser = /edg(?:e|a)?\//i.test(ua) ? 'Edge'
+    : /opr\//i.test(ua) ? 'Opera'
+    : /firefox\//i.test(ua) ? 'Firefox'
+    : /chrome\//i.test(ua) ? 'Chrome'
+    : /safari\//i.test(ua) ? 'Safari' : 'Other';
+  return { device, browser, os };
+}
+
+const profile = (() => {
+  try {
+    return parseUA(navigator.userAgent);
+  } catch {
+    return { device: 'Other', browser: 'Other', os: 'Other' };
+  }
+})();
+
+function referrer(): string | null {
+  try {
+    const ref = document.referrer;
+    if (!ref) return null;
+    try {
+      const host = new URL(ref).hostname;
+      return host && !host.endsWith(window.location.hostname) ? host.replace(/^www\./, '') : null;
+    } catch {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+}
+
+function syncSession(flush: boolean) {
+  if (!supabase) return;
+  try {
+    const sid = sessionId();
+    void supabase
+      .from('sessions')
+      .upsert(
+        {
+          id: sid,
+          started_at: sessionStart(),
+          last_seen: new Date().toISOString(),
+          page_count: pageCount(),
+          ...profile,
+          referrer: referrer(),
+          is_active: !flush,
+        },
+        { onConflict: 'id' },
+      )
+      .then(() => undefined);
+  } catch {
+    /* analytics must never break the app */
+  }
+}
+
 export function trackPageView(path: string) {
   if (!supabase) return;
   try {
@@ -23,10 +111,39 @@ export function trackPageView(path: string) {
     if (window.sessionStorage.getItem(seenKey)) return;
     window.sessionStorage.setItem(seenKey, '1');
     const sid = sessionId();
-    void supabase.from('page_views').insert({ path, session_id: sid }).then(() => undefined);
+    void supabase
+      .from('page_views')
+      .insert({ path, session_id: sid, ...profile, referrer: referrer() })
+      .then(() => undefined);
+    syncSession(false);
   } catch {
     /* analytics must never break the app */
   }
+}
+
+let heartbeatId: number | null = null;
+
+export function startSessionHeartbeat(): () => void {
+  syncSession(false);
+  if (heartbeatId === null) {
+    heartbeatId = window.setInterval(() => syncSession(false), HEARTBEAT_MS);
+  }
+  const onVisibility = () => {
+    if (document.visibilityState === 'hidden') syncSession(true);
+    else syncSession(false);
+  };
+  const onPageHide = () => syncSession(true);
+  document.addEventListener('visibilitychange', onVisibility);
+  window.addEventListener('pagehide', onPageHide);
+  return () => {
+    if (heartbeatId !== null) {
+      window.clearInterval(heartbeatId);
+      heartbeatId = null;
+    }
+    document.removeEventListener('visibilitychange', onVisibility);
+    window.removeEventListener('pagehide', onPageHide);
+    syncSession(true);
+  };
 }
 
 type OnlineListener = (count: number) => void;
