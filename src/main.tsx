@@ -3,6 +3,7 @@ import { withBase, applyBaseStyles } from '@/lib/base';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import App from './App';
+import AnalyticsTracker from '@/components/AnalyticsTracker';
 import RegisterPage from '@/pages/RegisterPage';
 import ConfirmationPage from '@/pages/ConfirmationPage';
 import AuctionPage from '@/pages/AuctionPage';
@@ -19,6 +20,7 @@ applyBaseStyles();
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <AnalyticsTracker />
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/register" element={<RegisterPage />} />
