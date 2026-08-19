@@ -113,6 +113,7 @@ export type PublicPlayer = {
   self_rating: number | null;
   dpl_played: boolean;
   jersey_size: string | null;
+  email: string | null;
   created_at: string;
 };
 
