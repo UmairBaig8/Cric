@@ -6,6 +6,7 @@ import SiteHeader from '@/components/SiteHeader';
 import ProfileCard from '@/components/ProfileCard';
 import { useTheme } from '@/lib/useTheme';
 import { fetchPlayersList, submitPlayerEdit, type PublicPlayer } from '@/lib/site';
+import { uploadPlayerPhoto } from '@/lib/registrations';
 import { Toaster } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,8 +22,11 @@ import { z } from 'zod';
 
 const ROLE_OPTIONS = ['Batter', 'Bowler', 'All-rounder', 'Wicketkeeper-batter'];
 const BATTING_OPTIONS = ['Right-hand batter', 'Left-hand batter'];
-const BOWLING_OPTIONS = ['Right-arm pace', 'Left-arm pace', 'Right-arm spin', 'Left-arm spin', 'Do not bowl'];
-const ARM_OPTIONS = ['Right arm', 'Left arm', 'Not applicable'];
+const BOWLING_OPTIONS = ['Do not bowl', 'Right-arm pace', 'Left-arm pace', 'Right-arm spin', 'Left-arm spin'];
+const ARM_OPTIONS = ['Not applicable', 'Right arm', 'Left arm'];
+const LOCATION_OPTIONS = ['CZ', 'SP', 'Other'];
+const AVAILABILITY_OPTIONS = ['Available for all matches', 'Available for most matches', 'Need schedule confirmation'];
+const JERSEY_OPTIONS = ['S', 'M', 'L', 'XL', 'XXL'];
 
 const editSchema = z.object({
   name: z.string().min(2, 'Name is required.'),
@@ -47,6 +51,8 @@ export default function PlayersPage() {
   const [params, setParams] = useSearchParams();
   const [editing, setEditing] = useState<PublicPlayer | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState('');
 
   const query = params.get('q') ?? '';
   const role = params.get('role') ?? 'ALL ROLES';
@@ -79,12 +85,14 @@ export default function PlayersPage() {
     defaultValues: {
       name: '', player_type: '', gender: '', location: '',
       batting_style: '', bowling_style: '', bowling_arm: '',
-      availability: 'FULL TIME', self_rating: '3', dpl_played: 'NO', jersey_size: '',
+      availability: AVAILABILITY_OPTIONS[0], self_rating: '3', dpl_played: 'NO', jersey_size: '',
     },
   });
 
   const openEdit = (player: PublicPlayer) => {
     setEditing(player);
+    setPhotoFile(null);
+    setPhotoPreview(player.photo_url ?? '');
     form.reset({
       name: player.name,
       player_type: player.player_type,
@@ -93,7 +101,7 @@ export default function PlayersPage() {
       batting_style: player.batting_style ?? '',
       bowling_style: player.bowling_style ?? '',
       bowling_arm: player.bowling_arm ?? '',
-      availability: player.availability ?? 'FULL TIME',
+      availability: player.availability ?? AVAILABILITY_OPTIONS[0],
       self_rating: String(player.self_rating ?? 3),
       dpl_played: player.dpl_played ? 'YES' : 'NO',
       jersey_size: player.jersey_size ?? '',
@@ -103,6 +111,15 @@ export default function PlayersPage() {
   const onSubmit = async (values: EditValues) => {
     if (!editing) return;
     const changes: Record<string, unknown> = {};
+    if (photoFile) {
+      try {
+        const url = await uploadPlayerPhoto(photoFile);
+        if (url !== editing.photo_url) changes.photo_url = url;
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Photo upload failed.');
+        return;
+      }
+    }
     if (values.name !== editing.name) changes.name = values.name;
     if (values.player_type !== editing.player_type) changes.player_type = values.player_type;
     if (values.gender !== editing.gender) changes.gender = values.gender;
@@ -110,7 +127,7 @@ export default function PlayersPage() {
     if (values.batting_style !== (editing.batting_style ?? '')) changes.batting_style = values.batting_style;
     if (values.bowling_style !== (editing.bowling_style ?? '')) changes.bowling_style = values.bowling_style;
     if (values.bowling_arm !== (editing.bowling_arm ?? '')) changes.bowling_arm = values.bowling_arm;
-    if (values.availability !== (editing.availability ?? 'FULL TIME')) changes.availability = values.availability;
+    if (values.availability !== (editing.availability ?? AVAILABILITY_OPTIONS[0])) changes.availability = values.availability;
     if (values.self_rating !== String(editing.self_rating ?? 3)) changes.self_rating = Number(values.self_rating);
     if (values.dpl_played !== (editing.dpl_played ? 'YES' : 'NO')) changes.dpl_played = values.dpl_played === 'YES';
     if (values.jersey_size !== (editing.jersey_size ?? '')) changes.jersey_size = values.jersey_size;
@@ -212,16 +229,16 @@ export default function PlayersPage() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField control={form.control} name="name" render={({ field }) => (
-                <FormItem><FormLabel>Full name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Full name</FormLabel><FormControl><Input {...field} placeholder="e.g. Virat Kohli" /></FormControl><FormMessage /></FormItem>
               )} />
               <div className="grid grid-cols-2 gap-3">
-                <FormField control={form.control} name="player_type" render={({ field }) => (
-                  <FormItem><FormLabel>Role</FormLabel>
+                <FormField control={form.control} name="location" render={({ field }) => (
+                  <FormItem><FormLabel>Location</FormLabel>
                     <FormControl>
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Select location" /></SelectTrigger>
                         <SelectContent>
-                          {ROLE_OPTIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                          {[...new Set([...LOCATION_OPTIONS, field.value])].filter(Boolean).map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </FormControl><FormMessage /></FormItem>
@@ -232,17 +249,25 @@ export default function PlayersPage() {
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="M">Male</SelectItem>
-                          <SelectItem value="F">Female</SelectItem>
+                          <SelectItem value="Male">Male</SelectItem>
+                          <SelectItem value="Female">Female</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl><FormMessage /></FormItem>
                 )} />
               </div>
-              <FormField control={form.control} name="location" render={({ field }) => (
-                <FormItem><FormLabel>Area</FormLabel><FormControl><Input {...field} placeholder="e.g. CZ, SP, Baner…" /></FormControl><FormMessage /></FormItem>
-              )} />
               <div className="grid grid-cols-2 gap-3">
+                <FormField control={form.control} name="player_type" render={({ field }) => (
+                  <FormItem><FormLabel>Player type</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger><SelectValue placeholder="Select player type" /></SelectTrigger>
+                        <SelectContent>
+                          {ROLE_OPTIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </FormControl><FormMessage /></FormItem>
+                )} />
                 <FormField control={form.control} name="batting_style" render={({ field }) => (
                   <FormItem><FormLabel>Batting style</FormLabel>
                     <FormControl>
@@ -276,34 +301,8 @@ export default function PlayersPage() {
                       </Select>
                     </FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="jersey_size" render={({ field }) => (
-                  <FormItem><FormLabel>Jersey size</FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Select size" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="S">S</SelectItem>
-                          <SelectItem value="M">M</SelectItem>
-                          <SelectItem value="L">L</SelectItem>
-                          <SelectItem value="XL">XL</SelectItem>
-                          <SelectItem value="XXL">XXL</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="self_rating" render={({ field }) => (
-                  <FormItem><FormLabel>Self rating (1–5)</FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Rate yourself" /></SelectTrigger>
-                        <SelectContent>
-                          {[1, 2, 3, 4, 5].map((n) => <SelectItem key={n} value={String(n)}>{'★'.repeat(n)}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </FormControl><FormMessage /></FormItem>
-                )} />
                 <FormField control={form.control} name="dpl_played" render={({ field }) => (
-                  <FormItem><FormLabel>Played DPL 2025</FormLabel>
+                  <FormItem><FormLabel>Played DPL before?</FormLabel>
                     <FormControl>
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
@@ -314,19 +313,71 @@ export default function PlayersPage() {
                       </Select>
                     </FormControl><FormMessage /></FormItem>
                 )} />
+                <FormField control={form.control} name="self_rating" render={({ field }) => (
+                  <FormItem><FormLabel>Rate your game <span className="text-muted-foreground">(1–5)</span></FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger><SelectValue placeholder="Rate yourself" /></SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5].map((n) => <SelectItem key={n} value={String(n)}>{'★'.repeat(n)}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </FormControl><FormMessage /></FormItem>
+                )} />
                 <FormField control={form.control} name="availability" render={({ field }) => (
-                  <FormItem><FormLabel>Availability</FormLabel>
+                  <FormItem><FormLabel>Match availability</FormLabel>
                     <FormControl>
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="FULL TIME">Full time</SelectItem>
-                          <SelectItem value="PART TIME">Part time</SelectItem>
+                          {AVAILABILITY_OPTIONS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="jersey_size" render={({ field }) => (
+                  <FormItem><FormLabel>Jersey size</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger><SelectValue placeholder="Select size" /></SelectTrigger>
+                        <SelectContent>
+                          {JERSEY_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </FormControl><FormMessage /></FormItem>
                 )} />
               </div>
+              <FormItem>
+                <FormLabel>Photo</FormLabel>
+                <FormControl>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-4">
+                      <div className="h-20 w-16 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+                        {photoPreview
+                          ? <img src={photoPreview} alt="Current photo" className="h-full w-full object-cover" />
+                          : <div className="flex h-full w-full items-center justify-center text-2xl text-muted-foreground">📷</div>}
+                      </div>
+                      <div className="space-y-1">
+                        <Input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0] ?? null;
+                            setPhotoFile(file);
+                            if (file) setPhotoPreview(URL.createObjectURL(file));
+                          }}
+                        />
+                        <p className="text-xs text-muted-foreground">New photo goes for approval like every other change.</p>
+                      </div>
+                    </div>
+                    {photoFile ? (
+                      <Button variant="outline" size="sm" type="button" onClick={() => { setPhotoFile(null); setPhotoPreview(editing?.photo_url ?? ''); }}>
+                        Remove photo
+                      </Button>
+                    ) : null}
+                  </div>
+                </FormControl>
+              </FormItem>
               <DialogFooter>
                 <Button variant="outline" type="button" onClick={() => setEditing(null)}>CANCEL</Button>
                 <Button type="submit" disabled={submitting}>
