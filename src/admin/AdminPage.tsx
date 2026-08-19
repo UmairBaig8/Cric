@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import DashboardTab from '@/admin/DashboardTab';
+import SessionsTab from '@/admin/SessionsTab';
 import PlayersTab from '@/admin/PlayersTab';
 import WorkflowTab from '@/admin/WorkflowTab';
 import {
@@ -62,7 +63,7 @@ const settingsSchema = z.object({
 
 type SettingsValues = z.infer<typeof settingsSchema>;
 
-const TAB_KEYS = ['dashboard', 'settings', 'teams', 'players', 'workflow'] as const;
+const TAB_KEYS = ['dashboard', 'sessions', 'settings', 'teams', 'players', 'workflow'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 export default function AdminPage() {
@@ -246,6 +247,9 @@ export default function AdminPage() {
           </div>
           <TabsContent value="dashboard">
             <DashboardTab />
+          </TabsContent>
+          <TabsContent value="sessions">
+            <SessionsTab />
           </TabsContent>
           <TabsContent value="settings">
             <SettingsTab />
