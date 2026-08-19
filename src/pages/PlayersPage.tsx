@@ -8,14 +8,13 @@ import { useTheme } from '@/lib/useTheme';
 import { fetchPlayersList, submitPlayerEdit, type PublicPlayer } from '@/lib/site';
 import { uploadPlayerPhoto } from '@/lib/registrations';
 import { Toaster } from '@/components/ui/sonner';
-import { Button } from '@/components/ui/button';
+
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -219,185 +218,162 @@ export default function PlayersPage() {
       </main>
 
       <Dialog open={editing !== null} onOpenChange={(open) => { if (!open) setEditing(null); }}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
+        <DialogContent className="registration-card max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Propose edit — {editing?.name}</DialogTitle>
             <DialogDescription>
               Your changes go to the tournament committee for approval. Nothing updates live.
             </DialogDescription>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-[auto_1fr] gap-4">
-                <div>
-                  <label className="block w-32 cursor-pointer">
-                    <span className="relative block aspect-3/4 overflow-hidden rounded-xl border border-border bg-muted shadow-sm transition-shadow hover:shadow-md">
-                      {photoPreview
-                        ? <img src={photoPreview} alt="Player photo" className="h-full w-full object-cover" />
-                        : <span className="flex h-full w-full items-center justify-center text-4xl text-muted-foreground">📷</span>}
-                      <span className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/60 via-transparent to-transparent pb-2 text-[10px] font-bold tracking-widest text-white opacity-0 transition-opacity hover:opacity-100">
-                        CHANGE PHOTO
-                      </span>
-                      <span className="absolute right-1.5 bottom-1.5 flex size-7 items-center justify-center rounded-full bg-primary/90 text-primary-foreground shadow">
-                        <Camera className="size-3.5" />
-                      </span>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="registration-form">
+            <div className="form-grid" style={{ gridTemplateColumns: 'auto 1fr', alignItems: 'start' }}>
+              <div>
+                <label className="block w-32 cursor-pointer">
+                  <span className="relative block aspect-3/4 overflow-hidden rounded-[10px] border border-[#dce5ec] bg-white/80 shadow-sm transition-shadow hover:shadow-md dark:border-[#355066] dark:bg-white/5">
+                    {photoPreview
+                      ? <img src={photoPreview} alt="Player photo" className="h-full w-full object-cover" />
+                      : <span className="flex h-full w-full items-center justify-center text-4xl text-muted-foreground">📷</span>}
+                    <span className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/60 via-transparent to-transparent pb-2 text-[10px] font-bold tracking-widest text-white opacity-0 transition-opacity hover:opacity-100">
+                      CHANGE PHOTO
                     </span>
-                    <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp"
-                      className="hidden"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0] ?? null;
-                        setPhotoFile(file);
-                        if (file) setPhotoPreview(URL.createObjectURL(file));
-                      }}
-                    />
-                  </label>
-                  {photoFile ? (
-                    <div className="mt-1 text-center">
-                      <Button variant="ghost" size="sm" type="button" onClick={() => { setPhotoFile(null); setPhotoPreview(editing?.photo_url ?? ''); }}>
-                        Remove photo
-                      </Button>
-                    </div>
-                  ) : null}
-                </div>
-                <div className="grid gap-3 sm:pt-1">
-                  <FormField control={form.control} name="name" render={({ field }) => (
-                    <FormItem><FormLabel>Full name</FormLabel><FormControl><Input {...field} placeholder="e.g. Virat Kohli" /></FormControl><FormMessage /></FormItem>
-                  )} />
-                  <div className="grid grid-cols-2 gap-3">
-                    <FormField control={form.control} name="location" render={({ field }) => (
-                      <FormItem><FormLabel>Location</FormLabel>
-                        <FormControl>
-                          <Select value={field.value} onValueChange={field.onChange}>
-                            <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                            <SelectContent>
-                              {LOCATION_OPTIONS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </FormControl><FormMessage /></FormItem>
-                    )} />
-                    <FormField control={form.control} name="gender" render={({ field }) => (
-                      <FormItem><FormLabel>Gender</FormLabel>
-                        <FormControl>
-                          <Select value={field.value} onValueChange={field.onChange}>
-                            <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Male">Male</SelectItem>
-                              <SelectItem value="Female">Female</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl><FormMessage /></FormItem>
-                    )} />
+                    <span className="absolute right-1.5 bottom-1.5 flex size-7 items-center justify-center rounded-full bg-primary/90 text-primary-foreground shadow">
+                      <Camera className="size-3.5" />
+                    </span>
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] ?? null;
+                      setPhotoFile(file);
+                      if (file) setPhotoPreview(URL.createObjectURL(file));
+                    }}
+                  />
+                </label>
+                {photoFile ? (
+                  <button type="button" className="mt-1 block text-[11px] font-bold text-[#d92d20] hover:underline" onClick={() => { setPhotoFile(null); setPhotoPreview(editing?.photo_url ?? ''); }}>
+                    Remove photo
+                  </button>
+                ) : null}
+              </div>
+              <div className="grid gap-3">
+                <label className="field-label">
+                  Full name
+                  <input type="text" placeholder="e.g. Virat Kohli" {...form.register('name')} />
+                </label>
+                {form.formState.errors.name ? <em className="field-error">{form.formState.errors.name.message}</em> : null}
+                <div className="form-grid">
+                  <div>
+                    <label className="field-label">
+                      Location
+                      <select {...form.register('location')}>
+                        {LOCATION_OPTIONS.map((l) => <option key={l} value={l}>{l}</option>)}
+                      </select>
+                    </label>
+                    {form.formState.errors.location ? <em className="field-error">{form.formState.errors.location.message}</em> : null}
+                  </div>
+                  <div>
+                    <label className="field-label">
+                      Gender
+                      <select {...form.register('gender')}>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                      </select>
+                    </label>
+                    {form.formState.errors.gender ? <em className="field-error">{form.formState.errors.gender.message}</em> : null}
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <FormField control={form.control} name="player_type" render={({ field }) => (
-                  <FormItem><FormLabel>Player type</FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Select player type" /></SelectTrigger>
-                        <SelectContent>
-                          {ROLE_OPTIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="batting_style" render={({ field }) => (
-                  <FormItem><FormLabel>Batting style</FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Select style" /></SelectTrigger>
-                        <SelectContent>
-                          {BATTING_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="bowling_style" render={({ field }) => (
-                  <FormItem><FormLabel>Bowling style</FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Select style" /></SelectTrigger>
-                        <SelectContent>
-                          {BOWLING_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="bowling_arm" render={({ field }) => (
-                  <FormItem><FormLabel>Bowling arm</FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Select arm" /></SelectTrigger>
-                        <SelectContent>
-                          {ARM_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="self_rating" render={({ field }) => (
-                  <FormItem><FormLabel>Rate your game <span className="text-muted-foreground">(1–5)</span></FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Rate yourself" /></SelectTrigger>
-                        <SelectContent>
-                          {[1, 2, 3, 4, 5].map((n) => <SelectItem key={n} value={String(n)}>{'★'.repeat(n)}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="dpl_played" render={({ field }) => (
-                  <FormItem><FormLabel>Played DPL before?</FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="YES">Yes</SelectItem>
-                          <SelectItem value="NO">No</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl><FormMessage /></FormItem>
-                )} />
+            </div>
+            <div className="form-grid">
+              <div>
+                <label className="field-label">
+                  Player type
+                  <select {...form.register('player_type')}>
+                    {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </label>
+                {form.formState.errors.player_type ? <em className="field-error">{form.formState.errors.player_type.message}</em> : null}
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <FormField control={form.control} name="availability" render={({ field }) => (
-                  <FormItem><FormLabel>Match availability</FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                        <SelectContent>
-                          {AVAILABILITY_OPTIONS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="jersey_size" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Jersey size <Badge variant="outline" className="ml-1 px-1.5 py-0 text-[9px] font-bold align-middle">TENTATIVE</Badge></FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Select size" /></SelectTrigger>
-                        <SelectContent>
-                          {JERSEY_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                    <p className="text-xs text-muted-foreground">Final size is confirmed on jersey day.</p>
-                  </FormItem>
-                )} />
+              <div>
+                <label className="field-label">
+                  Batting style
+                  <select {...form.register('batting_style')}>
+                    {BATTING_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </label>
+                {form.formState.errors.batting_style ? <em className="field-error">{form.formState.errors.batting_style.message}</em> : null}
               </div>
-              <DialogFooter>
-                <Button variant="outline" type="button" onClick={() => setEditing(null)}>CANCEL</Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting && <Loader2 className="size-4 animate-spin" />}
-                  SUBMIT FOR APPROVAL
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+              <div>
+                <label className="field-label">
+                  Bowling style
+                  <select {...form.register('bowling_style')}>
+                    {BOWLING_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </label>
+                {form.formState.errors.bowling_style ? <em className="field-error">{form.formState.errors.bowling_style.message}</em> : null}
+              </div>
+              <div>
+                <label className="field-label">
+                  Bowling arm
+                  <select {...form.register('bowling_arm')}>
+                    {ARM_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </label>
+                {form.formState.errors.bowling_arm ? <em className="field-error">{form.formState.errors.bowling_arm.message}</em> : null}
+              </div>
+              <div>
+                <label className="field-label">
+                  Rate your game (1–5)
+                  <select {...form.register('self_rating')}>
+                    {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{'★'.repeat(n)}</option>)}
+                  </select>
+                </label>
+                {form.formState.errors.self_rating ? <em className="field-error">{form.formState.errors.self_rating.message}</em> : null}
+              </div>
+              <div>
+                <label className="field-label">
+                  Played DPL before?
+                  <select {...form.register('dpl_played')}>
+                    <option value="YES">Yes</option>
+                    <option value="NO">No</option>
+                  </select>
+                </label>
+                {form.formState.errors.dpl_played ? <em className="field-error">{form.formState.errors.dpl_played.message}</em> : null}
+              </div>
+            </div>
+            <div className="form-grid">
+              <div>
+                <label className="field-label">
+                  Match availability
+                  <select {...form.register('availability')}>
+                    {AVAILABILITY_OPTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </label>
+                {form.formState.errors.availability ? <em className="field-error">{form.formState.errors.availability.message}</em> : null}
+              </div>
+              <div>
+                <label className="field-label">
+                  Jersey size
+                  <span className="align-middle" style={{ display: 'inline-block', marginLeft: 6, padding: '2px 6px', borderRadius: 6, border: '1px solid rgba(9,201,216,.4)', color: '#087f91', fontSize: 9, fontWeight: 900, letterSpacing: '.6px' }}>TENTATIVE</span>
+                  <select {...form.register('jersey_size')}>
+                    <option value="">Select size</option>
+                    {JERSEY_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </label>
+                <em className="field-error">{form.formState.errors.jersey_size?.message}</em>
+                <small className="block text-[10.5px] font-semibold" style={{ color: 'var(--muted-foreground)' }}>Final size is confirmed on jersey day.</small>
+              </div>
+            </div>
+            <div className="form-nav" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setEditing(null)}>CANCEL</button>
+              <button type="submit" className="btn btn-primary" disabled={submitting}>
+                {submitting && <Loader2 className="size-4 animate-spin" />}
+                SUBMIT FOR APPROVAL
+              </button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
       <footer>D2P · DPL 2026 · DIGITATE PREMIER LEAGUE · OFFICE CRICKET · BUILT FOR THE PEOPLE WHO TURN COFFEE BREAKS INTO CRICKET DEBATES.</footer>
