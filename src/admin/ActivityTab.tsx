@@ -37,6 +37,26 @@ type RegistrationIntel = {
   has_session: boolean;
 };
 
+type EditRequestIntel = {
+  id: string;
+  player_name: string;
+  status: string;
+  created_at: string;
+  visitor_id: string | null;
+  city: string | null;
+  region: string | null;
+  country: string | null;
+  isp: string | null;
+  device: string | null;
+  browser: string | null;
+  os: string | null;
+  ip_hash: string | null;
+  fingerprint: string | null;
+  visit_number: number | null;
+  has_session: boolean;
+  other_names_on_connection: number;
+};
+
 type FeedItem = {
   key: string;
   kind: 'reg' | 'audit';
@@ -47,6 +67,7 @@ type FeedItem = {
   icon: 'add' | 'update' | 'delete' | 'admin' | 'reg';
   reg?: RegistrationIntel;
   audit?: AuditEntry;
+  intel?: EditRequestIntel;
   summary: string;
 };
 
@@ -113,6 +134,7 @@ type Chip = (typeof CHIPS)[number];
 export default function ActivityTab() {
   const [audit, setAudit] = useState<AuditEntry[] | null>(null);
   const [intel, setIntel] = useState<RegistrationIntel[] | null>(null);
+  const [editIntel, setEditIntel] = useState<EditRequestIntel[] | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [filter, setFilter] = useState<Chip>('ALL');
   const [open, setOpen] = useState<string | null>(null);
@@ -126,6 +148,9 @@ export default function ActivityTab() {
     supabaseRef!
       .rpc('admin_registration_intel')
       .then(({ data, error }) => { if (!error && data && alive) setIntel(data as RegistrationIntel[]); }, () => undefined);
+    supabaseRef!
+      .rpc('admin_edit_request_intel')
+      .then(({ data, error }) => { if (!error && data && alive) setEditIntel(data as EditRequestIntel[]); }, () => undefined);
     return () => { alive = false; };
   }, [refreshKey]);
 
@@ -136,6 +161,8 @@ export default function ActivityTab() {
       window.setTimeout(() => setCopied(null), 1200);
     } catch { /* clipboard unavailable */ }
   }, []);
+
+  const intelById = new Map((editIntel ?? []).map((i) => [i.id, i]));
 
   const feed: FeedItem[] = [
     ...(intel ?? []).map((r): FeedItem => ({
@@ -149,17 +176,29 @@ export default function ActivityTab() {
       reg: r,
       summary: '',
     })),
-    ...(audit ?? []).map((e): FeedItem => ({
-      key: `audit-${e.id}`,
-      kind: 'audit',
-      when: e.created_at,
-      flagged: false,
-      icon: actionKind(e.action),
-      title: actionLabel(e.action),
-      sub: [e.actor_email ?? 'SITE VISITOR', e.requester ? `submitted by ${e.requester}` : null].filter(Boolean).join(' · '),
-      audit: e,
-      summary: detailSummary(e),
-    })),
+    ...(audit ?? []).map((e): FeedItem => {
+      const intelRow = e.detail?.request_id ? intelById.get(e.detail.request_id) : undefined;
+      const flagged = intelRow ? intelRow.other_names_on_connection > 0 : false;
+      const identity = intelRow && intelRow.has_session
+        ? [intelRow.city, intelRow.country].filter(Boolean).join(', ')
+        : null;
+      return {
+        key: `audit-${e.id}`,
+        kind: 'audit',
+        when: e.created_at,
+        flagged,
+        icon: actionKind(e.action),
+        title: actionLabel(e.action),
+        sub: [
+          e.actor_email ?? 'SITE VISITOR',
+          intelRow?.player_name ? `submitted by ${intelRow.player_name}` : null,
+          identity ?? null,
+        ].filter(Boolean).join(' · '),
+        audit: e,
+        intel: intelRow,
+        summary: detailSummary(e),
+      };
+    }),
   ].sort((a, b) => new Date(b.when).getTime() - new Date(a.when).getTime());
 
   const visible = feed.filter((f) => {
@@ -284,6 +323,48 @@ export default function ActivityTab() {
                       ) : null}
                       {item.reg.visitor_id ? (
                         <div className="font-mono text-[10px] text-muted-foreground">visitor {item.reg.visitor_id.slice(0, 12)}…</div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {isOpen && item.intel ? (
+                    <div className="mt-2 grid gap-2 border-t pt-2 text-xs sm:grid-cols-2 lg:grid-cols-3">
+                      <div>
+                        <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">LOCATION</div>
+                        <div>{[item.intel.city, item.intel.region, item.intel.country].filter(Boolean).join(', ') || 'Unknown'}</div>
+                        <div className="text-[10px] text-muted-foreground">{item.intel.isp}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">DEVICE</div>
+                        <div>{[item.intel.device, item.intel.browser, item.intel.os].filter(Boolean).join(' · ') || 'Unknown'}</div>
+                        {item.intel.visit_number ? <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400">VISIT #{item.intel.visit_number}</div> : null}
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">SIGNALS</div>
+                        <div className="flex flex-wrap gap-1">
+                          {!item.intel.has_session ? <Badge variant="secondary" className="text-[9px]">NO SESSION</Badge> : null}
+                          {item.intel.other_names_on_connection > 0 ? (
+                            <Badge variant="destructive" className="text-[9px]">
+                              <AlertTriangle className="size-2.5" /> OTHER NAMES ON SAME CONNECTION ×{item.intel.other_names_on_connection}
+                            </Badge>
+                          ) : null}
+                          {item.intel.has_session && item.intel.other_names_on_connection === 0 ? <span className="text-[10px] text-muted-foreground">looks clean</span> : null}
+                        </div>
+                      </div>
+                      {item.intel.ip_hash ? (
+                        <button
+                          type="button"
+                          onClick={() => void copyHash(item.intel!.ip_hash!)}
+                          title="Copy IP hash"
+                          className="inline-flex items-center gap-1.5 rounded border px-2 py-1 font-mono text-[10px] text-muted-foreground hover:text-foreground"
+                        >
+                          <Fingerprint className="size-3" />
+                          {item.intel.ip_hash}
+                          {copied === item.intel.ip_hash.slice(0, 8) ? <Copy className="size-3 text-emerald-500" /> : null}
+                        </button>
+                      ) : null}
+                      {item.intel.visitor_id ? (
+                        <div className="font-mono text-[10px] text-muted-foreground">visitor {item.intel.visitor_id.slice(0, 12)}…</div>
                       ) : null}
                     </div>
                   ) : null}

@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { getVisitorId } from './analytics';
 import type { SiteSettings, Team } from '../types';
 
 export async function fetchSiteSettings(): Promise<SiteSettings | null> {
@@ -135,7 +136,7 @@ export type EditRequest = {
 
 export async function submitPlayerEdit(playerId: string, playerName: string, changes: Record<string, unknown>): Promise<{ error?: string }> {
   if (!supabase) return { error: 'Supabase is not configured.' };
-  const { error } = await supabase.from('player_edit_requests').insert({ player_id: playerId, player_name: playerName, changes });
+  const { error } = await supabase.from('player_edit_requests').insert({ player_id: playerId, player_name: playerName, changes, visitor_id: getVisitorId() });
   if (error) return { error: error.message };
   return {};
 }
