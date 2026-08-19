@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Activity, Eye, BarChart3, Wifi, Monitor, Smartphone, Tablet, MapPin, Repeat, UserPlus, Network, MonitorSmartphone } from 'lucide-react';
+import { Activity, Eye, BarChart3, Wifi, Monitor, Smartphone, Tablet, MapPin, Repeat, UserPlus, Users, Bot } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { supabase as supabaseRef } from '@/lib/supabase';
 import { onOnlineCount } from '@/lib/analytics';
@@ -132,95 +132,141 @@ const DeviceIcon = ({ device }: { device: string | null }) => {
   return <Monitor className="size-4 shrink-0 text-muted-foreground" />;
 };
 
-function SessionGroups({ groups }: { groups: GroupData | null }) {
-  const ipRows = groups?.ip_groups ?? [];
-  const devRows = groups?.device_groups ?? [];
+type GroupRow = {
+  ip_hash?: string | null;
+  fingerprint?: string | null;
+  city: string | null;
+  country: string | null;
+  isp: string | null;
+  device: string | null;
+  browser: string | null;
+  os: string | null;
+  session_count: number;
+  visitor_count: number;
+  fingerprint_count?: number;
+  ip_count?: number;
+  active_count: number;
+  last_seen: string;
+  is_bot: boolean;
+};
+
+type GroupData = {
+  ip_groups: GroupRow[];
+  device_groups: GroupRow[];
+  active_visitors: number;
+};
+
+const BOT_NOTE = 'These connections belong to cloud/data-center networks, not homes or offices. They are usually automated checks or crawlers, not real people.';
+
+function PersonRow({ row, expanded, onToggle }: { row: GroupRow; expanded: boolean; onToggle: () => void }) {
+  const detail = [
+    row.ip_hash ? `connection ${row.ip_hash.slice(0, 12)}…` : null,
+    row.fingerprint ? `device key ${row.fingerprint.slice(0, 8)}…` : null,
+    row.session_count ? `${row.session_count} session${row.session_count === 1 ? '' : 's'}` : null,
+    row.visitor_count && row.visitor_count > 1 ? `${row.visitor_count} visitor IDs` : null,
+    row.ip_count && row.ip_count > 1 ? `${row.ip_count} connections` : null,
+  ].filter(Boolean).join(' · ');
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <div className="rounded-xl border bg-card p-5 shadow-sm">
-        <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted-foreground">
-          <Network className="size-3.5" /> CONNECTIONS — GROUPED BY IP HASH
+    <div className="rounded-lg border px-3 py-2">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted">
+            {row.device === 'Mobile' ? <Smartphone className="size-4 text-muted-foreground" /> : row.device === 'Tablet' ? <Tablet className="size-4 text-muted-foreground" /> : <Monitor className="size-4 text-muted-foreground" />}
+          </span>
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold">
+              {row.browser ?? 'Unknown'} on {row.os ?? 'Unknown OS'}
+              {row.active_count > 0 ? <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400"><span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />ONLINE</span> : null}
+            </div>
+            <div className="truncate text-xs text-muted-foreground">
+              {row.city && row.country ? `${row.city}, ${row.country}` : row.country ?? 'Unknown location'}
+              {row.session_count > 1 ? ` · ${row.session_count} tabs` : ' · 1 tab'}
+              {' · '}{row.active_count > 0 ? 'online now' : `seen ${fmtAgo(row.last_seen)}`}
+            </div>
+          </div>
         </div>
-        {ipRows.length ? (
+        <button type="button" onClick={onToggle} className="shrink-0 text-[10px] font-bold tracking-wide text-muted-foreground hover:text-foreground">
+          {expanded ? 'HIDE DETAILS' : 'DETAILS'}
+        </button>
+      </div>
+      {expanded ? (
+        <div className="mt-2 border-t pt-2 font-mono text-[10px] leading-5 text-muted-foreground">
+          {detail || 'No technical details for this visit yet.'}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function SessionGroups({ groups }: { groups: GroupData | null }) {
+  const people = (groups?.device_groups ?? []).filter((r) => !r.is_bot);
+  const bots = (groups?.device_groups ?? []).filter((r) => r.is_bot);
+  const connections = groups?.ip_groups ?? [];
+  const sharedConnection = connections.filter((r) => !r.is_bot && (r.fingerprint_count ?? 0) > 1);
+  const sharedDevice = (groups?.device_groups ?? []).filter((r) => !r.is_bot && (r.visitor_count ?? 0) > 1);
+  const [open, setOpen] = useState<string | null>(null);
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border bg-card p-5 shadow-sm">
+        <div className="mb-3 flex items-center gap-2">
+          <Users className="size-4 text-muted-foreground" />
+          <h3 className="font-display text-lg font-bold tracking-wide">WHO&apos;S ONLINE</h3>
+          <span className="text-xs text-muted-foreground">
+            {people.length ? `${people.filter((r) => r.active_count > 0).length} online now · ${people.length} seen today` : 'no human visitors tracked yet'}
+          </span>
+        </div>
+        {people.length ? (
           <div className="space-y-1.5">
-            {ipRows.slice(0, 8).map((row) => {
-              const shared = (row.visitor_count ?? 0) > 1 || (row.fingerprint_count ?? 0) > 1;
-              return (
-                <div key={row.ip_hash} className={`flex items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-sm ${shared ? 'border-amber-500/30 bg-amber-500/5' : ''}`}>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-[10px] text-muted-foreground">{row.ip_hash.slice(0, 12)}…</span>
-                      {shared ? <Badge variant="secondary" className="text-[9px]">SHARED</Badge> : null}
-                    </div>
-                    <div className="truncate text-xs text-muted-foreground">
-                      {[row.city, row.country].filter(Boolean).join(', ')}{row.isp ? ` · ${row.isp}` : ''}
-                    </div>
-                  </div>
-                  <div className="shrink-0 text-right text-[10px] text-muted-foreground whitespace-nowrap">
-                    <div className="font-bold text-foreground">{row.session_count} session{row.session_count === 1 ? '' : 's'}</div>
-                    {row.visitor_count > 1 ? <div>{row.visitor_count} visitors</div> : null}
-                    {row.fingerprint_count > 1 ? <div>{row.fingerprint_count} devices</div> : null}
-                    {row.active_count > 0 ? <div className="text-emerald-600 dark:text-emerald-400">{row.active_count} live</div> : null}
-                    <div>seen {fmtAgo(row.last_seen)}</div>
-                  </div>
-                </div>
-              );
-            })}
+            {people.map((row) => (
+              <PersonRow key={row.fingerprint} row={row} expanded={open === row.fingerprint} onToggle={() => setOpen(open === row.fingerprint ? null : (row.fingerprint ?? null))} />
+            ))}
           </div>
         ) : (
-          <p className="py-3 text-xs text-muted-foreground">No connection data yet.</p>
+          <p className="py-3 text-xs text-muted-foreground">No human visitors tracked yet — visits will appear here.</p>
         )}
+        {sharedConnection.length > 0 || sharedDevice.length > 0 ? (
+          <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+            {sharedConnection.length > 0
+              ? `${sharedConnection.length === 1 ? 'One connection is' : `${sharedConnection.length} connections are`} used by ${sharedConnection.map((r) => `${r.fingerprint_count} devices`).join(' and ')} — usually a household or office WiFi, but worth checking if the same person registered twice. See the ACTIVITY tab.`
+              : ''}
+            {sharedConnection.length > 0 && sharedDevice.length > 0 ? ' ' : ''}
+            {sharedDevice.length > 0
+              ? `${sharedDevice.length === 1 ? 'One device is' : `${sharedDevice.length} devices are`} linked to ${sharedDevice.length === 1 ? 'multiple visitor IDs' : 'several visitors'} — same browser used by different people, or cleared tracking.`
+              : ''}
+          </div>
+        ) : null}
       </div>
       <div className="rounded-xl border bg-card p-5 shadow-sm">
-        <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted-foreground">
-          <MonitorSmartphone className="size-3.5" /> DEVICES — GROUPED BY FINGERPRINT
+        <div className="mb-1 flex items-center gap-2">
+          <Bot className="size-4 text-muted-foreground" />
+          <h3 className="font-display text-lg font-bold tracking-wide">AUTOMATED TRAFFIC</h3>
+          <span className="text-xs text-muted-foreground">{bots.length ? `${bots.length} device${bots.length === 1 ? '' : 's'}` : 'none'}</span>
         </div>
-        {devRows.length ? (
-          <div className="space-y-1.5">
-            {devRows.slice(0, 8).map((row) => {
-              const shared = (row.visitor_count ?? 0) > 1 || (row.ip_count ?? 0) > 1;
-              return (
-                <div key={row.fingerprint} className={`flex items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-sm ${shared ? 'border-amber-500/30 bg-amber-500/5' : ''}`}>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-[10px] text-muted-foreground">fp:{row.fingerprint.slice(0, 8)}…</span>
-                      {shared ? <Badge variant="secondary" className="text-[9px]">SHARED</Badge> : null}
-                    </div>
-                    <div className="truncate text-xs text-muted-foreground">
-                      {[row.device, row.browser, row.os].filter(Boolean).join(' · ') || 'Unknown device'}
-                    </div>
+        {bots.length ? (
+          <>
+            <div className="mb-3 space-y-1.5">
+              {bots.map((row) => (
+                <div key={row.fingerprint} className="flex items-center justify-between gap-3 text-sm">
+                  <div className="min-w-0 truncate">
+                    <span className="font-medium">{row.isp ?? 'Cloud network'}</span>
+                    <span className="text-xs text-muted-foreground"> · {row.country ?? 'Unknown'}</span>
                   </div>
-                  <div className="shrink-0 text-right text-[10px] text-muted-foreground whitespace-nowrap">
-                    <div className="font-bold text-foreground">{row.session_count} session{row.session_count === 1 ? '' : 's'}</div>
-                    {row.visitor_count > 1 ? <div>{row.visitor_count} visitors</div> : null}
-                    {row.ip_count > 1 ? <div>{row.ip_count} connections</div> : null}
-                    {row.active_count > 0 ? <div className="text-emerald-600 dark:text-emerald-400">{row.active_count} live</div> : null}
-                    <div>seen {fmtAgo(row.last_seen)}</div>
+                  <div className="shrink-0 text-[10px] text-muted-foreground whitespace-nowrap">
+                    {row.session_count} session{row.session_count === 1 ? '' : 's'} · seen {fmtAgo(row.last_seen)}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">{BOT_NOTE}</p>
+          </>
         ) : (
-          <p className="py-3 text-xs text-muted-foreground">Fingerprints kick in with the next visit.</p>
+          <p className="py-3 text-xs text-muted-foreground">No cloud/bot traffic detected.</p>
         )}
       </div>
     </div>
   );
 }
-
-type GroupData = {
-  ip_groups: {
-    ip_hash: string; city: string | null; region: string | null; country: string | null; isp: string | null;
-    device: string | null; browser: string | null; os: string | null;
-    session_count: number; visitor_count: number; fingerprint_count: number; active_count: number; last_seen: string;
-  }[];
-  device_groups: {
-    fingerprint: string; device: string | null; browser: string | null; os: string | null;
-    session_count: number; visitor_count: number; ip_count: number; active_count: number; last_seen: string;
-  }[];
-  active_visitors: number;
-};
 
 export default function SessionsTab() {
   const [online, setOnline] = useState<number | null>(null);
