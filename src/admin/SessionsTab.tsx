@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Activity, Eye, BarChart3, Wifi, Monitor, Smartphone, Tablet } from 'lucide-react';
+import { Activity, Eye, BarChart3, Wifi, Monitor, Smartphone, Tablet, MapPin, Repeat } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { supabase as supabaseRef } from '@/lib/supabase';
 import { onOnlineCount } from '@/lib/analytics';
@@ -11,6 +11,8 @@ type ViewsSummary = {
   paths: { path: string; views: number }[];
   active_sessions: number;
   sessions_today: number;
+  top_cities: { label: string; sessions: number }[];
+  referrers: { label: string; sessions: number }[];
   recent_sessions: {
     id: string;
     started_at: string;
@@ -21,6 +23,12 @@ type ViewsSummary = {
     os: string | null;
     referrer: string | null;
     is_active: boolean;
+    country: string | null;
+    region: string | null;
+    city: string | null;
+    isp: string | null;
+    visit_number: number | null;
+    pages: string[];
   }[];
 };
 
@@ -38,6 +46,8 @@ const fmtAgo = (iso: string) => {
   if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
   return `${Math.floor(s / 86400)}d ago`;
 };
+
+const fmtPage = (path: string) => (path === '/' ? 'HOME' : path.slice(1).toUpperCase() || 'HOME');
 
 const DeviceIcon = ({ device }: { device: string | null }) => {
   if (device === 'Mobile') return <Smartphone className="size-4 shrink-0 text-muted-foreground" />;
@@ -69,24 +79,57 @@ export default function SessionsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard icon={<Activity />} label="ONLINE NOW" value={online ?? '…'} sub="live tabs" accent="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" />
         <StatCard icon={<Eye />} label="VIEWS TODAY" value={views?.today ?? '…'} sub="unique sessions" accent="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400" />
         <StatCard icon={<BarChart3 />} label="TOTAL VIEWS" value={views?.total ?? '…'} sub="all time" accent="bg-blue-500/10 text-blue-600 dark:text-blue-400" />
         <StatCard icon={<Wifi />} label="SESSIONS TODAY" value={views?.sessions_today ?? '…'} sub="visitors started" accent="bg-purple-500/10 text-purple-600 dark:text-purple-400" />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-xl border bg-card p-5 shadow-sm">
           <div className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground">TOP PAGES</div>
           {views && views.paths.length ? (
             <div className="space-y-1.5">
-              {views.paths.slice(0, 4).map((row) => (
+              {views.paths.slice(0, 6).map((row) => (
                 <div key={row.path} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="truncate font-medium">{row.path === '/' ? 'HOME' : row.path.slice(1).toUpperCase() || 'HOME'}</span>
+                  <span className="truncate font-medium">{fmtPage(row.path)}</span>
                   <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{row.views}</span>
                 </div>
               ))}
             </div>
           ) : (
             <p className="py-3 text-xs text-muted-foreground">No views recorded yet.</p>
+          )}
+        </div>
+        <div className="rounded-xl border bg-card p-5 shadow-sm">
+          <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted-foreground"><MapPin className="size-3.5" /> TOP CITIES TODAY</div>
+          {views && views.top_cities.length ? (
+            <div className="space-y-1.5">
+              {views.top_cities.slice(0, 6).map((row) => (
+                <div key={row.label} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="truncate font-medium">{row.label}</span>
+                  <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{row.sessions}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="py-3 text-xs text-muted-foreground">No location data yet — kicks in with the next visit.</p>
+          )}
+        </div>
+        <div className="rounded-xl border bg-card p-5 shadow-sm">
+          <div className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground">REFERRERS TODAY</div>
+          {views && views.referrers.length ? (
+            <div className="space-y-1.5">
+              {views.referrers.slice(0, 6).map((row) => (
+                <div key={row.label} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="truncate font-medium capitalize">{row.label}</span>
+                  <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{row.sessions}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="py-3 text-xs text-muted-foreground">No referrer data yet.</p>
           )}
         </div>
       </div>
@@ -105,14 +148,26 @@ export default function SessionsTab() {
                   <div className="min-w-0">
                     <div className="truncate font-medium">
                       {[session.device, session.browser, session.os].filter(Boolean).join(' · ') || 'Unknown device'}
+                      {session.visit_number !== null && session.visit_number > 1 ? (
+                        <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400"><Repeat className="size-3" />RETURN #{session.visit_number}</span>
+                      ) : null}
                       {session.is_active && new Date(session.last_seen).getTime() > Date.now() - 120000 ? (
                         <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400"><span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />LIVE</span>
                       ) : null}
                     </div>
                     <div className="truncate text-xs text-muted-foreground">
-                      {session.page_count} {session.page_count === 1 ? 'page' : 'pages'} · {fmtDuration(session.started_at, session.last_seen)}
+                      {[session.city && session.country ? `${session.city}, ${session.country}` : session.country, session.isp].filter(Boolean).join(' · ') || 'Unknown location'}
+                      {' · '}{session.page_count} {session.page_count === 1 ? 'page' : 'pages'} · {fmtDuration(session.started_at, session.last_seen)}
                       {session.referrer ? ` · via ${session.referrer}` : ' · direct'} · seen {fmtAgo(session.last_seen)}
                     </div>
+                    {session.pages.length ? (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {session.pages.slice(0, 5).map((page, index) => (
+                          <span key={`${page}-${index}`} className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">{fmtPage(page)}</span>
+                        ))}
+                        {session.pages.length > 5 ? <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">+{session.pages.length - 5}</span> : null}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </div>

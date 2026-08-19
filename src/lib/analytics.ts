@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 const SESSION_KEY = 'dpl_session_id';
 const SEEN_PREFIX = 'dpl_pv_seen_';
 const START_KEY = 'dpl_session_start';
+const VISITOR_KEY = 'dpl_visitor_id';
 const HEARTBEAT_MS = 30000;
 
 function sessionId(): string {
@@ -121,10 +122,43 @@ export function trackPageView(path: string) {
   }
 }
 
+function visitorId(): string | null {
+  try {
+    let id = window.localStorage.getItem(VISITOR_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      window.localStorage.setItem(VISITOR_KEY, id);
+    }
+    return id;
+  } catch {
+    return null;
+  }
+}
+
+function initSession() {
+  if (!supabase) return;
+  try {
+    void supabase.functions.invoke('track-session', {
+      body: {
+        sid: sessionId(),
+        started_at: sessionStart(),
+        page_count: pageCount(),
+        ...profile,
+        referrer: referrer(),
+        visitor_id: visitorId(),
+        is_active: true,
+      },
+    }).then(() => undefined);
+  } catch {
+    /* analytics must never break the app */
+  }
+}
+
 let heartbeatId: number | null = null;
 
 export function startSessionHeartbeat(): () => void {
   syncSession(false);
+  initSession();
   if (heartbeatId === null) {
     heartbeatId = window.setInterval(() => syncSession(false), HEARTBEAT_MS);
   }
