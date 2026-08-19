@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Activity, Eye, BarChart3, Wifi, Monitor, Smartphone, Tablet, MapPin, Repeat, UserPlus, Users, Bot } from 'lucide-react';
+import { IdentityTrace } from '@/admin/IdentityTrace';
 import { Badge } from '@/components/ui/badge';
 import { supabase as supabaseRef } from '@/lib/supabase';
 import { onOnlineCount } from '@/lib/analytics';
@@ -158,14 +159,20 @@ type GroupData = {
 
 const BOT_NOTE = 'These connections belong to cloud/data-center networks, not homes or offices. They are usually automated checks or crawlers, not real people.';
 
-function PersonRow({ row, expanded, onToggle }: { row: GroupRow; expanded: boolean; onToggle: () => void }) {
-  const detail = [
-    row.ip_hash ? `connection ${row.ip_hash.slice(0, 12)}…` : null,
-    row.fingerprint ? `device key ${row.fingerprint.slice(0, 8)}…` : null,
-    row.session_count ? `${row.session_count} session${row.session_count === 1 ? '' : 's'}` : null,
-    row.visitor_count && row.visitor_count > 1 ? `${row.visitor_count} visitor IDs` : null,
-    row.ip_count && row.ip_count > 1 ? `${row.ip_count} connections` : null,
-  ].filter(Boolean).join(' · ');
+function PersonRow({ row, expanded, onToggle, onTrace }: { row: GroupRow; expanded: boolean; onToggle: () => void; onTrace: (hash: string) => void }) {
+  const detail: (React.ReactNode | null)[] = [
+    row.ip_hash ? (
+      <span key="conn">on connection{' '}
+        <button type="button" onClick={() => onTrace(row.ip_hash!)} title="Open connection trace" className="font-mono text-foreground underline decoration-dotted underline-offset-2 hover:text-primary">
+          {row.ip_hash.slice(0, 12)}…
+        </button>
+      </span>
+    ) : null,
+    row.fingerprint ? <span key="fp">device key {row.fingerprint.slice(0, 8)}…</span> : null,
+    row.session_count ? <span key="sc">{row.session_count} session{row.session_count === 1 ? '' : 's'}</span> : null,
+    row.visitor_count && row.visitor_count > 1 ? <span key="vc">{row.visitor_count} visitor IDs</span> : null,
+    row.ip_count && row.ip_count > 1 ? <span key="ic">{row.ip_count} connections</span> : null,
+  ];
   return (
     <div className="rounded-lg border px-3 py-2">
       <div className="flex items-center justify-between gap-3">
@@ -191,14 +198,16 @@ function PersonRow({ row, expanded, onToggle }: { row: GroupRow; expanded: boole
       </div>
       {expanded ? (
         <div className="mt-2 border-t pt-2 font-mono text-[10px] leading-5 text-muted-foreground">
-          {detail || 'No technical details for this visit yet.'}
+          {detail.some(Boolean) ? detail.filter(Boolean).map((el, index) => (
+            <span key={index}>{index > 0 ? ' · ' : ''}{el}</span>
+          )) : 'No technical details for this visit yet.'}
         </div>
       ) : null}
     </div>
   );
 }
 
-function SessionGroups({ groups }: { groups: GroupData | null }) {
+function SessionGroups({ groups, onTrace }: { groups: GroupData | null; onTrace: (hash: string) => void }) {
   const people = (groups?.device_groups ?? []).filter((r) => !r.is_bot);
   const bots = (groups?.device_groups ?? []).filter((r) => r.is_bot);
   const connections = groups?.ip_groups ?? [];
@@ -219,7 +228,7 @@ function SessionGroups({ groups }: { groups: GroupData | null }) {
         {people.length ? (
           <div className="space-y-1.5">
             {people.map((row) => (
-              <PersonRow key={row.fingerprint} row={row} expanded={open === row.fingerprint} onToggle={() => setOpen(open === row.fingerprint ? null : (row.fingerprint ?? null))} />
+              <PersonRow key={row.fingerprint} row={row} expanded={open === row.fingerprint} onToggle={() => setOpen(open === row.fingerprint ? null : (row.fingerprint ?? null))} onTrace={onTrace} />
             ))}
           </div>
         ) : (
@@ -273,6 +282,7 @@ export default function SessionsTab() {
   const [views, setViews] = useState<ViewsSummary | null>(null);
   const [groups, setGroups] = useState<GroupData | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [traceHash, setTraceHash] = useState<string | null>(null);
 
   useEffect(() => onOnlineCount(setOnline), []);
 
@@ -311,7 +321,8 @@ export default function SessionsTab() {
         <PeakHeatmap heatmap={views?.heatmap ?? []} />
       </div>
 
-      <SessionGroups groups={groups} />
+      <SessionGroups groups={groups} onTrace={setTraceHash} />
+      <IdentityTrace connHash={traceHash} open={!!traceHash} onOpenChange={(open) => { if (!open) setTraceHash(null); }} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-xl border bg-card p-5 shadow-sm">
