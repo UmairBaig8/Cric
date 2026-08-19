@@ -46,7 +46,6 @@ export default function TeamsPage() {
           ))}
         </section>
       </main>
-      <footer>D2P · DPL 2026 · DIGITATE PREMIER LEAGUE · OFFICE CRICKET · BUILT FOR THE PEOPLE WHO TURN COFFEE BREAKS INTO CRICKET DEBATES.</footer>
     </div>
   );
 }

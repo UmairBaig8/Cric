@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pencil } from 'lucide-react';
 
 type ProfileCardProps = {
@@ -13,13 +14,23 @@ type ProfileCardProps = {
 };
 
 export default function ProfileCard({ avatarUrl, name, title, handle, status, fallbackInitials, rating, batting, onEdit }: ProfileCardProps) {
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
   return (
     <div className="player-card-lite">
-      {avatarUrl ? (
-        <img className="player-card-bg" src={avatarUrl} alt={name} loading="lazy" />
-      ) : (
-        <div className="player-card-bg player-card-bg-fallback">{fallbackInitials}</div>
-      )}
+      <div className="player-card-bg player-card-bg-fallback">{fallbackInitials}</div>
+      {avatarUrl && !failed ? (
+        <img
+          className="player-card-bg"
+          src={avatarUrl}
+          alt={name}
+          loading="lazy"
+          decoding="async"
+          style={{ opacity: loaded ? 1 : 0, transition: 'opacity .35s ease' }}
+          onLoad={() => setLoaded(true)}
+          onError={() => setFailed(true)}
+        />
+      ) : null}
       <div className="player-card-shade" />
       <div className="player-card-top">
         <div className="player-card-id">

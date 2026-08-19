@@ -25,7 +25,6 @@ const BOWLING_OPTIONS = ['Do not bowl', 'Right-arm pace', 'Left-arm pace', 'Righ
 const ARM_OPTIONS = ['Not applicable', 'Right arm', 'Left arm'];
 const LOCATION_OPTIONS = ['CZ', 'SP', 'Other'];
 const AVAILABILITY_OPTIONS = ['Available for all matches', 'Available for most matches', 'Need schedule confirmation'];
-const JERSEY_OPTIONS = ['S', 'M', 'L', 'XL', 'XXL'];
 
 const editSchema = z.object({
   name: z.string().min(2, 'Name is required.'),
@@ -38,7 +37,6 @@ const editSchema = z.object({
   availability: z.string(),
   self_rating: z.string().regex(/^[1-5]$/, 'Rate 1–5.'),
   dpl_played: z.string().min(1, 'Select an option.'),
-  jersey_size: z.string(),
 });
 
 type EditValues = z.infer<typeof editSchema>;
@@ -84,7 +82,7 @@ export default function PlayersPage() {
     defaultValues: {
       name: '', player_type: '', gender: '', location: '',
       batting_style: '', bowling_style: '', bowling_arm: '',
-      availability: AVAILABILITY_OPTIONS[0], self_rating: '3', dpl_played: 'NO', jersey_size: '',
+      availability: AVAILABILITY_OPTIONS[0], self_rating: '3', dpl_played: 'NO',
     },
   });
 
@@ -103,7 +101,6 @@ export default function PlayersPage() {
       availability: player.availability ?? AVAILABILITY_OPTIONS[0],
       self_rating: String(player.self_rating ?? 3),
       dpl_played: player.dpl_played ? 'YES' : 'NO',
-      jersey_size: player.jersey_size ?? '',
     });
   };
 
@@ -129,7 +126,6 @@ export default function PlayersPage() {
     if (values.availability !== (editing.availability ?? AVAILABILITY_OPTIONS[0])) changes.availability = values.availability;
     if (values.self_rating !== String(editing.self_rating ?? 3)) changes.self_rating = Number(values.self_rating);
     if (values.dpl_played !== (editing.dpl_played ? 'YES' : 'NO')) changes.dpl_played = values.dpl_played === 'YES';
-    if (values.jersey_size !== (editing.jersey_size ?? '')) changes.jersey_size = values.jersey_size;
 
     if (Object.keys(changes).length === 0) {
       toast.info('Nothing changed.');
@@ -210,7 +206,7 @@ export default function PlayersPage() {
                 onEdit={() => openEdit(player)}
               />
             ))}
-        </section>
+          </section>
 
         {!loading && filtered.length === 0 && (
           <p className="players-empty">No players match your search.</p>
@@ -218,7 +214,7 @@ export default function PlayersPage() {
       </main>
 
       <Dialog open={editing !== null} onOpenChange={(open) => { if (!open) setEditing(null); }}>
-        <DialogContent className="registration-card max-h-[85vh] overflow-y-auto">
+        <DialogContent className={`registration-card edit-dialog max-h-[85vh] overflow-y-auto${dark ? ' dialog-dark' : ''}`}>
           <DialogHeader>
             <DialogTitle>Propose edit — {editing?.name}</DialogTitle>
             <DialogDescription>
@@ -229,14 +225,14 @@ export default function PlayersPage() {
             <div className="form-grid" style={{ gridTemplateColumns: 'auto 1fr', alignItems: 'start' }}>
               <div>
                 <label className="block w-32 cursor-pointer">
-                  <span className="relative block aspect-3/4 overflow-hidden rounded-[10px] border border-[#dce5ec] bg-white/80 shadow-sm transition-shadow hover:shadow-md dark:border-[#355066] dark:bg-white/5">
+                  <span className="edit-photo relative block aspect-3/4 overflow-hidden rounded-[10px] border shadow-sm transition-shadow hover:shadow-md">
                     {photoPreview
                       ? <img src={photoPreview} alt="Player photo" className="h-full w-full object-cover" />
-                      : <span className="flex h-full w-full items-center justify-center text-4xl text-muted-foreground">📷</span>}
+                      : <span className="edit-photo-fallback flex h-full w-full items-center justify-center text-4xl">📷</span>}
                     <span className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/60 via-transparent to-transparent pb-2 text-[10px] font-bold tracking-widest text-white opacity-0 transition-opacity hover:opacity-100">
                       CHANGE PHOTO
                     </span>
-                    <span className="absolute right-1.5 bottom-1.5 flex size-7 items-center justify-center rounded-full bg-primary/90 text-primary-foreground shadow">
+                    <span className="absolute right-1.5 bottom-1.5 flex size-7 items-center justify-center rounded-full bg-[#65e5ed]/90 text-[#071426] shadow">
                       <Camera className="size-3.5" />
                     </span>
                   </span>
@@ -343,28 +339,14 @@ export default function PlayersPage() {
                 {form.formState.errors.dpl_played ? <em className="field-error">{form.formState.errors.dpl_played.message}</em> : null}
               </div>
             </div>
-            <div className="form-grid">
-              <div>
-                <label className="field-label">
-                  Match availability
-                  <select {...form.register('availability')}>
-                    {AVAILABILITY_OPTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
-                  </select>
-                </label>
-                {form.formState.errors.availability ? <em className="field-error">{form.formState.errors.availability.message}</em> : null}
-              </div>
-              <div>
-                <label className="field-label">
-                  Jersey size
-                  <span className="align-middle" style={{ display: 'inline-block', marginLeft: 6, padding: '2px 6px', borderRadius: 6, border: '1px solid rgba(9,201,216,.4)', color: '#087f91', fontSize: 9, fontWeight: 900, letterSpacing: '.6px' }}>TENTATIVE</span>
-                  <select {...form.register('jersey_size')}>
-                    <option value="">Select size</option>
-                    {JERSEY_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </label>
-                <em className="field-error">{form.formState.errors.jersey_size?.message}</em>
-                <small className="block text-[10.5px] font-semibold" style={{ color: 'var(--muted-foreground)' }}>Final size is confirmed on jersey day.</small>
-              </div>
+            <div className="edit-avail">
+              <label className="field-label">
+                Match availability
+                <select {...form.register('availability')}>
+                  {AVAILABILITY_OPTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </label>
+              {form.formState.errors.availability ? <em className="field-error">{form.formState.errors.availability.message}</em> : null}
             </div>
             <div className="form-nav" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
               <button type="button" className="btn btn-ghost" onClick={() => setEditing(null)}>CANCEL</button>
@@ -376,7 +358,6 @@ export default function PlayersPage() {
           </form>
         </DialogContent>
       </Dialog>
-      <footer>D2P · DPL 2026 · DIGITATE PREMIER LEAGUE · OFFICE CRICKET · BUILT FOR THE PEOPLE WHO TURN COFFEE BREAKS INTO CRICKET DEBATES.</footer>
     </div>
   );
 }

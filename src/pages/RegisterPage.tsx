@@ -210,7 +210,7 @@ export default function RegisterPage() {
         <BorderGlow
           className="registration-glow"
           backgroundColor="#071426"
-          colors={['#09c9d8', '#873cff', '#2f7dff']}
+          colors={['#09c9d8', '#2f7dff', '#16c79a']}
           glowColor="196 100 48"
           glowIntensity={1.15}
           glowRadius={30}
