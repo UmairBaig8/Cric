@@ -187,6 +187,7 @@ export type AdminPlayer = {
   bowling_style: string | null;
   bowling_arm: string | null;
   availability: string | null;
+  jersey_size: string | null;
   created_at: string;
   team_id: string | null;
   team_code: string | null;
