@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Search, MapPin, Pencil, Loader2, UserRound } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 import SiteHeader from '@/components/SiteHeader';
+import ProfileCard from '@/components/ProfileCard';
 import { useTheme } from '@/lib/useTheme';
 import { fetchPlayersList, submitPlayerEdit, type PublicPlayer } from '@/lib/site';
 import { Toaster } from '@/components/ui/sonner';
@@ -180,27 +181,16 @@ export default function PlayersPage() {
               </Card>
             ))
             : filtered.map((player) => (
-              <Card key={player.id} className="player-profile-card overflow-hidden">
-                <div className="player-profile-strip" />
-                <CardContent className="p-5 pt-9">
-                  <div className="player-profile-photo">
-                    {player.photo_url
-                      ? <img src={player.photo_url} alt={player.name} />
-                      : <span><UserRound className="size-8" /></span>}
-                  </div>
-                  <h3 className="player-profile-name">{player.name}</h3>
-                  <Badge variant="secondary">{player.player_type}</Badge>
-                  <p className="player-profile-loc"><MapPin className="size-3.5" /> {player.location || 'AREA TBD'}</p>
-                  <div className="player-profile-stats">
-                    <div><b>{player.self_rating ?? '—'}</b><span>RATING</span></div>
-                    <div><b>{player.dpl_played ? 'YES' : 'NO'}</b><span>DPL 2025</span></div>
-                    <div><b>{player.batting_style || '—'}</b><span>BATTING</span></div>
-                  </div>
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => openEdit(player)}>
-                    <Pencil className="size-3.5" /> EDIT DETAILS
-                  </Button>
-                </CardContent>
-              </Card>
+              <ProfileCard
+                key={player.id}
+                avatarUrl={player.photo_url}
+                name={player.name}
+                title={player.player_type}
+                handle={player.location || 'DPL 2026'}
+                status={player.dpl_played ? '★ DPL 2025 ALUM' : 'NEW TO DPL 2026'}
+                fallbackInitials={player.name.split(' ').map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
+                onEdit={() => openEdit(player)}
+              />
             ))}
         </section>
 
