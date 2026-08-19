@@ -27,11 +27,9 @@ const ARM_OPTIONS = ['Not applicable', 'Right arm', 'Left arm'];
 const LOCATION_OPTIONS = ['CZ', 'SP', 'Other'];
 const AVAILABILITY_OPTIONS = ['Available for all matches', 'Available for most matches', 'Need schedule confirmation'];
 const JERSEY_OPTIONS = ['S', 'M', 'L', 'XL', 'XXL'];
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 const editSchema = z.object({
   name: z.string().min(2, 'Name is required.'),
-  email: z.string().min(1, 'Work email is required.').regex(EMAIL_RE, 'Enter a valid email address (e.g. you@company.com).'),
   player_type: z.string().min(1, 'Role is required.'),
   gender: z.string().min(1, 'Gender is required.'),
   location: z.string().min(1, 'Area is required.'),
@@ -97,7 +95,6 @@ export default function PlayersPage() {
     setPhotoPreview(player.photo_url ?? '');
     form.reset({
       name: player.name,
-      email: player.email ?? '',
       player_type: player.player_type,
       gender: player.gender,
       location: player.location,
@@ -124,7 +121,6 @@ export default function PlayersPage() {
       }
     }
     if (values.name !== editing.name) changes.name = values.name;
-    if (values.email !== (editing.email ?? '')) changes.email = values.email;
     if (values.player_type !== editing.player_type) changes.player_type = values.player_type;
     if (values.gender !== editing.gender) changes.gender = values.gender;
     if (values.location !== editing.location) changes.location = values.location;
@@ -269,47 +265,32 @@ export default function PlayersPage() {
                   <FormField control={form.control} name="name" render={({ field }) => (
                     <FormItem><FormLabel>Full name</FormLabel><FormControl><Input {...field} placeholder="e.g. Virat Kohli" /></FormControl><FormMessage /></FormItem>
                   )} />
-                  <FormField control={form.control} name="email" render={({ field }) => (
-                    <FormItem><FormLabel>Work email</FormLabel><FormControl><Input {...field} type="email" placeholder="e.g. you@company.com" /></FormControl><FormMessage /></FormItem>
-                  )} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField control={form.control} name="location" render={({ field }) => (
+                      <FormItem><FormLabel>Location</FormLabel>
+                        <FormControl>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectContent>
+                              {LOCATION_OPTIONS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="gender" render={({ field }) => (
+                      <FormItem><FormLabel>Gender</FormLabel>
+                        <FormControl>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Male">Male</SelectItem>
+                              <SelectItem value="Female">Female</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl><FormMessage /></FormItem>
+                    )} />
+                  </div>
                 </div>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <FormField control={form.control} name="location" render={({ field }) => (
-                  <FormItem><FormLabel>Location</FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Select location" /></SelectTrigger>
-                        <SelectContent>
-                          {[...new Set([...LOCATION_OPTIONS, field.value])].filter(Boolean).map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="gender" render={({ field }) => (
-                  <FormItem><FormLabel>Gender</FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Male">Male</SelectItem>
-                          <SelectItem value="Female">Female</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="dpl_played" render={({ field }) => (
-                  <FormItem><FormLabel>Played DPL before?</FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="YES">Yes</SelectItem>
-                          <SelectItem value="NO">No</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl><FormMessage /></FormItem>
-                )} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <FormField control={form.control} name="player_type" render={({ field }) => (
@@ -363,6 +344,18 @@ export default function PlayersPage() {
                         <SelectTrigger><SelectValue placeholder="Rate yourself" /></SelectTrigger>
                         <SelectContent>
                           {[1, 2, 3, 4, 5].map((n) => <SelectItem key={n} value={String(n)}>{'★'.repeat(n)}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="dpl_played" render={({ field }) => (
+                  <FormItem><FormLabel>Played DPL before?</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="YES">Yes</SelectItem>
+                          <SelectItem value="NO">No</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl><FormMessage /></FormItem>
