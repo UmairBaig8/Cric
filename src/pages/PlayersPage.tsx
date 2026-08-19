@@ -228,7 +228,7 @@ export default function PlayersPage() {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-[auto,1fr] gap-4">
+              <div className="grid grid-cols-[auto_1fr] gap-4">
                 <div>
                   <label className="block w-32 cursor-pointer">
                     <span className="relative block aspect-3/4 overflow-hidden rounded-xl border border-border bg-muted shadow-sm transition-shadow hover:shadow-md">
