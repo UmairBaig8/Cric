@@ -1,5 +1,6 @@
-import { useTheme } from './lib/useTheme';
-import SiteHeader from './components/SiteHeader';
+import { useTheme } from '@/lib/useTheme';
+import { withBase } from '@/lib/base';
+import SiteHeader from '@/components/SiteHeader';
 
 export default function ConfirmationPage() {
   const { dark, toggleTheme } = useTheme();
@@ -20,7 +21,7 @@ export default function ConfirmationPage() {
             <div><b>02</b><strong>JERSEY DAY</strong><span>Wear your team colours. Wear your pride.</span></div>
             <div><b>03</b><strong>MATCH DAY</strong><span>Make memories on the pitch.</span></div>
           </div>
-          <a className="btn btn-primary" href="/D2P/">← BACK TO DPL</a>
+          <a className="btn btn-primary" href={withBase("/")}>← BACK TO DPL</a>
         </div>
       </main>
     </div>

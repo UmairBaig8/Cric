@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { getVisitorId } from './analytics';
 import type { SiteSettings, Team } from '../types';
 
 export async function fetchSiteSettings(): Promise<SiteSettings | null> {
@@ -99,7 +100,78 @@ export async function fetchTeamRoster(teamCode: string): Promise<TeamRosterPlaye
   return error ? [] : (data as TeamRosterPlayer[]);
 }
 
+export type PublicPlayer = {
+  id: string;
+  name: string;
+  photo_url: string | null;
+  player_type: string;
+  gender: string;
+  location: string;
+  batting_style: string | null;
+  bowling_style: string | null;
+  bowling_arm: string | null;
+  availability: string | null;
+  self_rating: number | null;
+  dpl_played: boolean;
+  jersey_size: string | null;
+  created_at: string;
+};
+
+export async function fetchPlayersList(): Promise<PublicPlayer[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('players_list');
+  return error ? [] : (data as PublicPlayer[]);
+}
+
+export type EditRequest = {
+  id: string;
+  player_id: string;
+  player_name: string;
+  changes: Record<string, unknown>;
+  status: 'pending' | 'approved' | 'rejected';
+  admin_note: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+};
+
+export async function submitPlayerEdit(playerId: string, playerName: string, changes: Record<string, unknown>): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Supabase is not configured.' };
+  const { error } = await supabase.from('player_edit_requests').insert({ player_id: playerId, player_name: playerName, changes, visitor_id: getVisitorId() });
+  if (error) return { error: error.message };
+  return {};
+}
+
+export async function fetchPendingEdits(): Promise<EditRequest[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.from('player_edit_requests').select('*').eq('status', 'pending').order('created_at', { ascending: false });
+  return error ? [] : (data as EditRequest[]);
+}
+
+export async function reviewPlayerEdit(requestId: string, decision: 'approved' | 'rejected', note?: string | null): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Supabase is not configured.' };
+  const { data: request, error: fetchError } = await supabase.from('player_edit_requests').select('*').eq('id', requestId).single();
+  if (fetchError || !request) return { error: fetchError?.message ?? 'Request not found.' };
+  if (decision === 'approved') {
+    const apply = await adminUpdatePlayer(request.player_id, request.changes as Parameters<typeof adminUpdatePlayer>[1]);
+    if (apply.error) return apply;
+  }
+  const { error } = await supabase.from('player_edit_requests')
+    .update({ status: decision, admin_note: note ?? null, reviewed_at: new Date().toISOString() })
+    .eq('id', requestId);
+  if (error) return { error: error.message };
+  void logAudit(`edit.${decision}`, request.player_id, { request_id: requestId, note: note ?? null });
+  return {};
+}
+
 // ---------- Admin ----------
+
+export async function logAudit(action: string, targetId: string | null, detail?: Record<string, unknown>) {
+  if (!supabase) return;
+  const { data } = await supabase.auth.getUser();
+  const actorEmail = data.user?.email ?? null;
+  if (!actorEmail) return;
+  await supabase.from('admin_audit').insert({ actor_email: actorEmail, action, target_id: targetId, detail: detail ?? null });
+}
 
 export type AdminPlayer = {
   id: string;
@@ -112,6 +184,11 @@ export type AdminPlayer = {
   location: string;
   dpl_played: boolean;
   self_rating: number;
+  batting_style: string | null;
+  bowling_style: string | null;
+  bowling_arm: string | null;
+  availability: string | null;
+  jersey_size: string | null;
   created_at: string;
   team_id: string | null;
   team_code: string | null;
@@ -194,13 +271,17 @@ export async function adminUpsertTeam(team: {
   const { error } = team.id
     ? await supabase.from('teams').update(team).eq('id', team.id)
     : await supabase.from('teams').insert(team);
-  return error ? { error: error.message } : {};
+  if (error) return { error: error.message };
+  void logAudit(team.id ? 'team.update' : 'team.add', team.id ?? null, { name: team.name, code: team.code });
+  return {};
 }
 
 export async function adminDeleteTeam(id: string): Promise<{ error?: string }> {
   if (!supabase) return { error: 'Supabase is not configured.' };
   const { error } = await supabase.from('teams').delete().eq('id', id);
-  return error ? { error: error.message } : {};
+  if (error) return { error: error.message };
+  void logAudit('team.delete', id, {});
+  return {};
 }
 
 export async function adminAssignPlayer(playerId: string, teamId: string, role: string): Promise<{ error?: string }> {
@@ -209,17 +290,59 @@ export async function adminAssignPlayer(playerId: string, teamId: string, role: 
     { team_id: teamId, player_id: playerId, role },
     { onConflict: 'team_id,player_id' },
   );
-  return error ? { error: error.message } : {};
+  if (error) return { error: error.message };
+  void logAudit('player.assign', playerId, { team_id: teamId, role });
+  return {};
 }
 
 export async function adminRemovePlayerFromTeam(playerId: string): Promise<{ error?: string }> {
   if (!supabase) return { error: 'Supabase is not configured.' };
   const { error } = await supabase.from('team_players').delete().eq('player_id', playerId);
-  return error ? { error: error.message } : {};
+  if (error) return { error: error.message };
+  void logAudit('player.unassign', playerId, {});
+  return {};
 }
 
-export async function adminUpdatePlayer(playerId: string, patch: { name?: string; location?: string; dpl_played?: boolean; player_type?: string }): Promise<{ error?: string }> {
+export async function adminAddPlayer(player: {
+  name: string;
+  email: string;
+  employee_id: string;
+  gender?: string | null;
+  location?: string | null;
+  player_type: string;
+  batting_style: string;
+  bowling_style: string;
+  bowling_arm: string;
+  cricket_experience: string;
+  jersey_size: string;
+  availability: string;
+  self_rating?: number;
+  dpl_played?: boolean;
+  photo_url?: string | null;
+}): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Supabase is not configured.' };
+  const { error } = await supabase.from('registrations').insert(player);
+  if (error) return { error: error.message };
+  return {};
+}
+
+export async function adminUpdatePlayer(playerId: string, patch: {
+  name?: string;
+  email?: string;
+  employee_id?: string | null;
+  location?: string;
+  dpl_played?: boolean;
+  player_type?: string;
+  gender?: string;
+  self_rating?: number;
+  batting_style?: string | null;
+  bowling_style?: string | null;
+  bowling_arm?: string | null;
+  availability?: string | null;
+  photo_url?: string | null;
+}): Promise<{ error?: string }> {
   if (!supabase) return { error: 'Supabase is not configured.' };
   const { error } = await supabase.from('registrations').update(patch).eq('id', playerId);
-  return error ? { error: error.message } : {};
+  if (error) return { error: error.message };
+  return {};
 }

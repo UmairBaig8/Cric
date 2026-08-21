@@ -1,5 +1,6 @@
-import SiteHeader from './components/SiteHeader';
-import { useTheme } from './lib/useTheme';
+import SiteHeader from '@/components/SiteHeader';
+import { withBase } from '@/lib/base';
+import { useTheme } from '@/lib/useTheme';
 
 type ComingSoonPageProps = {
   eyebrow: string;
@@ -27,7 +28,7 @@ export default function ComingSoonPage({ eyebrow, title, copy, icon = '🏏', ba
           <h1>COMING<br /><span>SOON.</span></h1>
           <h2>{title}</h2>
           <p className="coming-soon-copy">{copy}</p>
-          <a className="btn btn-primary" href="/D2P/">← BACK TO D2P</a>
+          <a className="btn btn-primary" href={withBase("/")}>← BACK TO D2P</a>
         </div>
       </main>
       <footer>D2P · DPL 2026 · DIGITATE PREMIER LEAGUE · OFFICE CRICKET · BUILT FOR THE PEOPLE WHO TURN COFFEE BREAKS INTO CRICKET DEBATES.</footer>
