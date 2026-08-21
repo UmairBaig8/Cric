@@ -57,24 +57,18 @@ function TypesBarCard({ rows }: { rows: { label: string; count: number; color: s
         <p className="py-8 text-center text-xs text-muted-foreground">No data yet.</p>
       ) : (
         <ChartContainer config={{ value: { label: 'Players', color: '#873cff' } }} className="h-52 w-full">
-          <BarChartLayout rows={rows} />
+          <BarChart data={rows} margin={{ top: 8, right: 4, left: -14, bottom: 0 }}>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" />
+            <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} fontSize={10} interval={0} />
+            <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={10} />
+            <ChartTooltip cursor={{ fill: 'var(--color-muted)' }} content={<ChartTooltipContent />} />
+            <Bar dataKey="count" name="Players" radius={[4, 4, 0, 0]}>
+              {rows.map((row) => <Cell key={row.label} fill={row.color} />)}
+            </Bar>
+          </BarChart>
         </ChartContainer>
       )}
     </div>
-  );
-}
-
-function BarChartLayout({ rows }: { rows: { label: string; count: number; color: string }[] }) {
-  return (
-    <BarChart data={rows} margin={{ top: 8, right: 4, left: -14, bottom: 0 }}>
-      <CartesianGrid vertical={false} strokeDasharray="3 3" />
-      <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} fontSize={10} interval={0} />
-      <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={10} />
-      <ChartTooltip cursor={{ fill: 'var(--color-muted)' }} content={<ChartTooltipContent />} />
-      <Bar dataKey="count" name="Players" radius={[4, 4, 0, 0]}>
-        {rows.map((row) => <Cell key={row.label} fill={row.color} />)}
-      </Bar>
-    </BarChart>
   );
 }
 
